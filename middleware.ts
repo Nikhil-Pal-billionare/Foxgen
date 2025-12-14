@@ -4,7 +4,7 @@ export function middleware(req: NextRequest) {
   const session = req.cookies.get("sb-access-token");
 
   const protectedRoutes = [
-    "/dashboard",
+    // "/dashboard",
     "/script-generator",
     "/voiceover",
     "/image-generator",
