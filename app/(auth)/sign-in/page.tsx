@@ -6,6 +6,7 @@ import { InputField } from "@/components/auth/input-field";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import FoxgenLogo from "@/components/branding/FoxgenLogo";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -16,45 +17,29 @@ export default function SignInPage() {
 
   async function handleSignIn(e: any) {
     e.preventDefault();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return alert(error.message);
-
     router.push("/dashboard");
   }
 
   return (
-    <AuthCard title="Sign In">
+    <AuthCard>
+
+      <FoxgenLogo size={90} />
+
+      <h2 className="text-center text-3xl font-bold mb-6">Welcome Back</h2>
+
       <form className="space-y-4" onSubmit={handleSignIn}>
-        <InputField
-          label="Email"
-          id="email"
-          type="email"
-          value={email}
-          onChange={setEmail}
-        />
+        <InputField label="Email" id="email" type="email" value={email} onChange={setEmail} />
+        <InputField label="Password" id="password" type="password" value={password} onChange={setPassword} />
 
-        <InputField
-          label="Password"
-          id="password"
-          type="password"
-          value={password}
-          onChange={setPassword}
-        />
-
-        <Button className="w-full" type="submit">
+        <Button className="w-full bg-[#C1272D] hover:bg-[#a02025]" type="submit">
           Sign In
         </Button>
 
-        <p className="text-sm text-center">
+        <p className="text-sm text-center mt-2 text-gray-400">
           Don't have an account?{" "}
-          <a href="/sign-up" className="text-blue-600 underline">
-            Sign Up
-          </a>
+          <a href="/sign-up" className="text-[#C1272D] underline">Sign Up</a>
         </p>
       </form>
     </AuthCard>
