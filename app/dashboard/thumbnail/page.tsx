@@ -4,6 +4,9 @@ import { useState } from "react";
 import ThumbnailEditor from "./ThumbnailEditor";
 import ThumbnailVariations from "./ThumbnailVariations";
 
+import { CREDIT_COSTS } from "@/lib/creditCosts";
+import { deductCredits } from "@/utils/deductCredits";
+
 export default function ThumbnailPage() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -11,23 +14,36 @@ export default function ThumbnailPage() {
   const [images, setImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const generate = () => {
+  const generate = async () => {
     if (!prompt) return;
+
     setLoading(true);
 
-    // 🔴 TEMP: fake AI variations
-    setTimeout(() => {
-      const generatedImages = [
-        "/placeholder-thumbnail.png",
-        "/placeholder-thumbnail.png",
-        "/placeholder-thumbnail.png",
-        "/placeholder-thumbnail.png",
-      ];
+    try {
+      // ✅ Deduct credits BEFORE generation
+      await deductCredits({
+        amount: CREDIT_COSTS.THUMBNAIL_GENERATION,
+        reason: "Thumbnail generation",
+        meta: { prompt },
+      });
 
-      setImages(generatedImages);
-      setSelectedImage(generatedImages[0]);
+      // 🔴 TEMP: fake AI variations
+      setTimeout(() => {
+        const generatedImages = [
+          "/placeholder-thumbnail.png",
+          "/placeholder-thumbnail.png",
+          "/placeholder-thumbnail.png",
+          "/placeholder-thumbnail.png",
+        ];
+
+        setImages(generatedImages);
+        setSelectedImage(generatedImages[0]);
+        setLoading(false);
+      }, 1200);
+    } catch (err: any) {
+      alert(err.message || "Failed to generate thumbnail");
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (

@@ -23,8 +23,7 @@ lerna-debug.log*
 supabase/.temp/
 supabase/.branches/
 
-# Logs
-logs
+
 *.log
 *.log.*
 pids
