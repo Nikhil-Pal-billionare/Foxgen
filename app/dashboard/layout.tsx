@@ -23,7 +23,7 @@ export default function DashboardLayout({
             <a href="/dashboard/thumbnail" className="block text-gray-300 hover:text-white">
               Thumbnail Generator
             </a>
-            <a href="/dashboard/video" className="block text-gray-300 hover:text-white">
+            <a href="/dashboard/video-generator" className="block text-gray-300 hover:text-white">
               AI Video Creator
             </a>
             <a href="/dashboard/results" className="block text-gray-300 hover:text-white">
