@@ -1,4 +1,6 @@
-type DeductCreditsInput = {
+// utils/deductCredits.ts
+
+type DeductCreditsArgs = {
   amount: number;
   reason: string;
   meta?: Record<string, any>;
@@ -7,18 +9,25 @@ type DeductCreditsInput = {
 export async function deductCredits({
   amount,
   reason,
-  meta,
-}: DeductCreditsInput) {
+  meta = {},
+}: DeductCreditsArgs) {
   const res = await fetch("/api/credits/deduct", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount, reason, meta }),
+    credentials: "include", // 🔥 THIS FIXES UNAUTHORIZED
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount,
+      reason,
+      meta,
+    }),
   });
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.error || "Credit deduction failed");
+    throw new Error(data.error || "Failed to deduct credits");
   }
 
   return data;
