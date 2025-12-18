@@ -1,12 +1,23 @@
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+-- ================================
+-- PROFILE UPDATE TIMESTAMP
+-- ================================
+
+CREATE OR REPLACE FUNCTION public.set_profile_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (NEW.id, NEW.email);
+  NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER on_auth_user_created
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'set_profile_updated_at'
+  ) THEN
+    CREATE TRIGGER set_profile_updated_at
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.set_profile_updated_at();
+  END IF;
+END $$;

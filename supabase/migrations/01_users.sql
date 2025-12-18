@@ -1,13 +1,18 @@
--- USER PROFILE TABLE (linked 1:1 with auth.users)
+-- ================================
+-- USER PROFILE TABLE (1:1 with auth.users)
+-- ================================
 
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- automatically sync email from auth table
+-- ================================
+-- Sync email from auth.users → profiles
+-- ================================
+
 CREATE OR REPLACE FUNCTION public.sync_user_email()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -19,32 +24,75 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER sync_email_trigger
-AFTER UPDATE ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.sync_user_email();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'sync_email_trigger'
+  ) THEN
+    CREATE TRIGGER sync_email_trigger
+    AFTER UPDATE ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.sync_user_email();
+  END IF;
+END $$;
 
--- Insert profile on sign-up
+-- ================================
+-- Create profile automatically on signup
+-- ================================
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles(id, email)
-  VALUES(new.id, new.email);
-  RETURN new;
+  VALUES (NEW.id, NEW.email)
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.credits(user_id, balance)
+  VALUES (NEW.id, 10000)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER on_auth_user_created
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
+
+-- ================================
+-- Row Level Security
+-- ================================
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "User can view own profile"
-ON public.profiles
-FOR SELECT
-USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'User can view own profile'
+  ) THEN
+    CREATE POLICY "User can view own profile"
+    ON public.profiles
+    FOR SELECT
+    USING (auth.uid() = id);
+  END IF;
+END $$;
 
-CREATE POLICY "User can update own profile"
-ON public.profiles
-FOR UPDATE
-USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'User can update own profile'
+  ) THEN
+    CREATE POLICY "User can update own profile"
+    ON public.profiles
+    FOR UPDATE
+    USING (auth.uid() = id);
+  END IF;
+END $$;
