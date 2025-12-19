@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/**
- * Toggle Gemini usage safely
- * false = use mock (current state)
- * true  = real Gemini (when infra works)
- */
+
 const USE_GEMINI = false;
 
 const genAI = process.env.GEMINI_API_KEY
