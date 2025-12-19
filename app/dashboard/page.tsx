@@ -41,8 +41,8 @@ export default function DashboardPage() {
 
       {/* Image → Video */}
       <GeneratorCard
-        title="Image to Video"
-        description="Turn images into AI videos"
+        title="Video-generator"
+        description="Generate videos using scripts and stock footage"
         credits={
           videoQuality === "480p"
             ? String(CREDIT_COSTS.IMAGE_TO_VIDEO_480P)
