@@ -1,0 +1,145 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export default function ProductsPage() {
+  const router = useRouter();
+
+  const [videoRes, setVideoRes] = useState<"480p" | "720p">("480p");
+  const [adsRes, setAdsRes] = useState<"480p" | "720p">("480p");
+
+  const videoCost = videoRes === "480p" ? 52 : 115;
+  const adsCost = adsRes === "480p" ? 52 : 115;
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-2xl font-semibold">Our Products</h1>
+
+      <div className="grid md:grid-cols-2 gap-6">
+
+        {/* Script Generator */}
+        <ProductCard
+          title="Script Generator"
+          desc="Generate creative AI scripts"
+          cost="10 credits"
+          onGenerate={() => router.push("/dashboard/script-generator")}
+        />
+
+        {/* Voiceover */}
+        <ProductCard
+          title="Voiceover Generator"
+          desc="Convert text into realistic voice"
+          cost="16 credits / minute"
+          onGenerate={() => router.push("/dashboard/voiceover-generator")}
+        />
+
+        {/* Image Generator */}
+        <ProductCard
+          title="Image Generator"
+          desc="Create high-quality AI images"
+          cost="20 credits"
+          onGenerate={() => router.push("/dashboard/image-generator")}
+        />
+
+        {/* Image to Video (WITH RESOLUTION) */}
+        <ProductCard
+          title="Image to Video"
+          desc="Turn images into AI videos"
+          cost={`${videoCost} credits`}
+        >
+          <ResolutionSelect value={videoRes} onChange={setVideoRes} />
+          <GenerateButton
+            onClick={() =>
+              router.push(`/dashboard/video-generator?res=${videoRes}`)
+            }
+          />
+        </ProductCard>
+
+        {/* Thumbnail */}
+        <ProductCard
+          title="Thumbnail Generator"
+          desc="Generate YouTube thumbnails"
+          cost="40 credits"
+          onGenerate={() => router.push("/dashboard/thumbnail-generator")}
+        />
+
+        {/* AI Ads (WITH RESOLUTION) */}
+        <ProductCard
+          title="AI Ads Generator"
+          desc="Generate AI-powered video ads"
+          cost={`${adsCost} credits`}
+        >
+          <ResolutionSelect value={adsRes} onChange={setAdsRes} />
+          <GenerateButton
+            onClick={() =>
+              router.push(`/dashboard/ads-generator?res=${adsRes}`)
+            }
+          />
+        </ProductCard>
+
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- Components -------------------- */
+
+function ProductCard({
+  title,
+  desc,
+  cost,
+  onGenerate,
+  children,
+}: {
+  title: string;
+  desc: string;
+  cost: string;
+  onGenerate?: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-3xl bg-white/5 border border-white/10 p-6 space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <p className="text-sm text-gray-400">{desc}</p>
+      </div>
+
+      <p className="text-sm text-gray-400">Cost: {cost}</p>
+
+      {children ?? (
+        <GenerateButton onClick={onGenerate!} />
+      )}
+    </div>
+  );
+}
+
+function ResolutionSelect({
+  value,
+  onChange,
+}: {
+  value: "480p" | "720p";
+  onChange: (v: "480p" | "720p") => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as any)}
+      className="bg-black border border-white/20 rounded-lg px-4 py-2 text-sm"
+    >
+      <option value="480p">480p</option>
+      <option value="720p">720p</option>
+    </select>
+  );
+}
+
+function GenerateButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-6 py-2 bg-red-600 hover:bg-red-500 transition rounded-lg text-sm font-medium"
+    >
+      Generate
+    </button>
+  );
+}
