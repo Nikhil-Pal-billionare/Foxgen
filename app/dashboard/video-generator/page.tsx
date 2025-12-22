@@ -1,100 +1,162 @@
 "use client";
 
 import { useState } from "react";
+import { deductCredits } from "@/utils/deductCredits";
+import { CREDIT_COSTS } from "@/lib/creditCosts";
+
 import { fetchPexelsVideos, PexelsVideo } from "@/lib/pexels";
+import {
+  Sparkles,
+  Film,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+  CheckCircle2,
+  Play,
+} from "lucide-react";
+
+type Scene = {
+  id: number;
+  text: string;
+  footageType: string;
+  videos: PexelsVideo[];
+  selectedVideo?: string;
+};
 
 export default function VideoGeneratorPage() {
+  const [userInput, setUserInput] = useState("");
   const [script, setScript] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [videos, setVideos] = useState<PexelsVideo[]>([]);
+  const [step, setStep] = useState(1);
+  const [scenes, setScenes] = useState<Scene[]>([]);
   const [error, setError] = useState("");
 
-  const generateVideos = async () => {
+  // ✅ STEP 1 — Deduct credits ONCE and generate plan
+  const generatePlan = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // simple keyword extraction (MVP)
-      const keyword = script.split(" ").slice(0, 3).join(" ");
+      // 1️⃣ Deduct credits FIRST
+      const creditResult = await deductCredits({ amount: CREDIT_COSTS.video_plan, reason: "video_plan" }); // e.g. 52
 
-      const results = await fetchPexelsVideos(keyword);
-      setVideos(results);
+      if (!creditResult?.success) {
+        setError("Insufficient credits. Please recharge to continue.");
+        return;
+      }
+
+      // 2️⃣ Call Gemini ONLY after credits are deducted
+      const res = await fetch("/api/gemini/video-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: userInput }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Gemini API failed");
+      }
+
+      const data = await res.json();
+
+      setScript(data.finalScript);
+      setScenes(
+        data.scenes.map((s: any, i: number) => ({
+          ...s,
+          id: i,
+          videos: [],
+        }))
+      );
+      setStep(2);
     } catch (err) {
-      setError("Could not fetch videos from Pexels");
+  console.error("DEBUG ERROR:", err); // Isse console mein asli error dikhega
+  setError(`Error: ${err instanceof Error ? err.message : "Something went wrong"}`);
+}
+  };
+
+  const finalizeAndFetch = async () => {
+    try {
+      setLoading(true);
+
+      const updatedScenes = [...scenes];
+      for (let i = 0; i < updatedScenes.length; i++) {
+        const videos = await fetchPexelsVideos(updatedScenes[i].footageType);
+        updatedScenes[i].videos = videos;
+        updatedScenes[i].selectedVideo =
+          videos[0]?.video_files[0]?.link;
+      }
+
+      setScenes(updatedScenes);
+      setStep(3);
+    } catch {
+      setError("Failed to fetch footage.");
     } finally {
       setLoading(false);
     }
   };
 
+  const moveScene = (index: number, dir: "up" | "down") => {
+    const copy = [...scenes];
+    const target = dir === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= copy.length) return;
+    [copy[index], copy[target]] = [copy[target], copy[index]];
+    setScenes(copy);
+  };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 text-white">
-      <h1 className="text-3xl font-bold">AI Video Generator</h1>
-      <p className="text-gray-400">
-        Generate videos using scripts and stock footage
-      </p>
-
-      {/* SCRIPT INPUT */}
-      <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800">
-        <label className="text-sm text-gray-400">Video Script</label>
-
-        <textarea
-          value={script}
-          onChange={(e) => setScript(e.target.value)}
-          className="w-full mt-2 h-40 p-3 bg-black border border-neutral-700 rounded text-white"
-          placeholder="Write or generate your video script..."
-        />
-
-        <button
-          onClick={() => setConfirmed(true)}
-          disabled={!script}
-          className="mt-4 px-6 py-2 bg-red-600 rounded disabled:opacity-50"
-        >
-          Confirm Script
-        </button>
+    <div className="max-w-6xl mx-auto px-6 py-12 min-h-screen text-slate-200">
+      {/* Header */}
+      <div className="flex justify-between mb-12">
+        <h1 className="text-4xl font-black text-white flex gap-3">
+          <Film className="text-red-600" /> AI Video Studio
+        </h1>
       </div>
 
-      {!confirmed && (
-        <p className="text-yellow-500 text-sm">
-          ⚠ Please confirm the script to start video generation
-        </p>
+      {/* STEP 1 */}
+      {step === 1 && (
+        <div className="max-w-3xl mx-auto">
+          <textarea
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            className="w-full h-48 p-6 bg-black/50 rounded-2xl"
+            placeholder="Describe your video..."
+          />
+          <button
+            onClick={generatePlan}
+            disabled={loading || !userInput}
+            className="w-full mt-6 py-4 bg-red-600 rounded-xl font-bold"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin mx-auto" />
+            ) : (
+              <>
+                <Sparkles size={18} /> Generate Video Plan
+              </>
+            )}
+          </button>
+        </div>
       )}
 
-      {/* VIDEO GENERATION */}
-      {confirmed && (
-        <div className="bg-neutral-900 p-6 rounded-xl border border-neutral-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              Stock Footage (Pexels)
-            </h2>
+      {/* STEP 2 */}
+      {step === 2 && (
+        <button
+          onClick={finalizeAndFetch}
+          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
+        >
+          Confirm & Fetch Footage
+        </button>
+      )}
 
-            <button
-              onClick={generateVideos}
-              className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
-            >
-              {loading ? "Fetching..." : "Generate Videos"}
-            </button>
+      {/* STEP 3 */}
+      {step === 3 &&
+        scenes.map((scene, i) => (
+          <div key={scene.id} className="mb-12">
+            <p className="text-xl italic">"{scene.text}"</p>
           </div>
+        ))}
 
-          {error && <p className="text-red-500">{error}</p>}
-
-          {/* VIDEO GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {videos.map((video) => (
-              <video
-                key={video.id}
-                src={video.video_files[0]?.link}
-                controls
-                className="rounded border border-neutral-700"
-              />
-            ))}
-          </div>
-
-          {videos.length === 0 && !loading && (
-            <p className="text-gray-400 text-sm">
-              No videos yet. Click “Generate Videos”.
-            </p>
-          )}
+      {error && (
+        <div className="fixed bottom-8 right-8 bg-red-800 px-6 py-4 rounded-xl">
+          {error}
         </div>
       )}
     </div>
