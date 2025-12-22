@@ -94,14 +94,6 @@ export default function VideoGeneratorPage() {
     }
   };
 
-  const moveScene = (index: number, dir: "up" | "down") => {
-    const copy = [...scenes];
-    const target = dir === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= copy.length) return;
-    [copy[index], copy[target]] = [copy[target], copy[index]];
-    setScenes(copy);
-  };
-
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 min-h-screen text-slate-200">
       {/* Header */}
