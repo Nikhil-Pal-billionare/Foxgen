@@ -1,93 +1,205 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
-import { createClient } from "@/lib/supabaseClient";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { PricingSection } from "@/components/landing/PricingSection";
+
+type RecentEntry = { email: string; status: string; joined_at: string; role?: string };
 
 export default function Home() {
-  const router = useRouter();
-  const supabase = createClient();
-
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [role, setRole] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [isSubmitting, setSubmitting] = useState(false);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
+  const [count, setCount] = useState<number>(0);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setIsLoggedIn(!!data.user);
-      setLoading(false);
-    });
-  }, [supabase]);
+    fetch("/api/waitlist")
+      .then((r) => r.json())
+      .then((data) => {
+        setRecent(data.recent ?? []);
+        setCount(data.count ?? 0);
+      })
+      .catch(() => {});
+  }, []);
 
-  const handleStartCreating = () => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/sign-in");
+  async function joinWaitlist(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, whatsapp: whatsapp || undefined, role: role || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setMessage(data.message);
+      setEmail("");
+      setWhatsapp("");
+      setRole("");
+      // refresh count
+      fetch("/api/waitlist").then((r) => r.json()).then((d) => { setCount(d.count ?? 0); setRecent(d.recent ?? []); });
+    } catch (err: any) {
+      setMessage(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-  };
+  }
 
-  if (loading) return null;
+
+  async function startEarlyPayment(planId: string) {
+    if (!email) {
+      setMessage("Please enter your email first");
+      return;
+    }
+    setCheckoutLoading(true);
+    setSelectedPlan(planId);
+    try {
+      // Create Razorpay order
+      const res = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, planId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create order");
+
+      const { order, key_id, planName } = data;
+
+      // Load Razorpay script
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector("script[src='https://checkout.razorpay.com/v1/checkout.js']");
+        if (existing) return resolve(true);
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error("Failed to load payment script"));
+        document.body.appendChild(script);
+      });
+
+      // @ts-ignore - Razorpay injected globally
+      const rzp = new window.Razorpay({
+        key: key_id,
+        order_id: order.id,
+        name: `Foxgen Early Access - ${planName}`,
+        description: `Launch phase discounted access (${planName})`,
+        prefill: { email },
+        notes: { email, planId },
+        handler: async function (response: any) {
+          // Verify signature
+          const verifyRes = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              email,
+            }),
+          });
+          const v = await verifyRes.json();
+          if (!verifyRes.ok) {
+            setMessage(v.error || "Payment verification failed");
+          } else {
+            setMessage("Payment successful. You now have early access.");
+          }
+        },
+        theme: { color: "#C1272D" },
+      });
+      rzp.open();
+    } catch (err: any) {
+      setMessage(err.message || "Payment error");
+    } finally {
+      setCheckoutLoading(false);
+      setSelectedPlan("");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#0D0D0D] text-white">
-
-      {/* Hero Section */}
-      <section className="text-center py-24 px-6 space-y-8 max-w-4xl mx-auto">
-        <div className="mb-4">
-          <FoxgenLogo size={140} />
+      <section className="text-center py-10 px-6 space-y-6 max-w-5xl mx-auto">
+        <div className="mb-2">
+          <FoxgenLogo size={120} />
         </div>
 
-        <h1 className="text-5xl font-extrabold leading-tight">
-          Stop Creating Content Manually.<br />
-          Let AI Do It for You.
+        <h1 className="text-4xl font-extrabold leading-tight mb-2">
+          Foxgen Launch: Join the Waitlist
         </h1>
 
-        <p className="text-gray-300 text-lg leading-relaxed max-w-2xl mx-auto">
-          Foxgen automates 100% of your content creation — from idea to image, video,
-          voice, and final output. Just enter an idea. Foxgen handles the rest.
+        <p className="text-gray-300 text-base leading-relaxed mb-6">
+          We’re unlocking access in batches. Early users get huge discounts.
         </p>
 
-        <button
-          onClick={handleStartCreating}
-          className="inline-block mt-6 px-10 py-3 bg-[#C1272D] hover:bg-[#A02025]
-                     rounded-xl text-lg font-semibold transition"
-        >
-          Start Creating
-        </button>
-      </section>
+        {/* Pricing Plans */}
+        <PricingSection
+          onSelectPlan={(planId) => startEarlyPayment(planId)}
+          loadingPlanId={checkoutLoading ? selectedPlan : undefined}
+        />
 
-      {/* Sample Images Section */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-6">AI Image Samples</h2>
+        {/* Waitlist Form */}
+        <div className="rounded-xl border border-gray-800 p-6 text-left bg-[#121212] max-w-lg mx-auto mt-12">
+          <form onSubmit={joinWaitlist} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email (required)</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+            </div>
+            <div>
+              <Label htmlFor="whatsapp">WhatsApp (optional)</Label>
+              <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+91xxxxxxxxxx" />
+            </div>
+            <div>
+              <Label htmlFor="role">Role (optional)</Label>
+              <select id="role" className="w-full bg-transparent border border-gray-700 rounded-md p-2" value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="">Select</option>
+                <option value="creator">Creator</option>
+                <option value="editor">Editor</option>
+                <option value="agency">Agency</option>
+              </select>
+            </div>
+            <div className="flex gap-3">
+              <Button type="submit" disabled={isSubmitting} className="bg-[#C1272D] hover:bg-[#A02025]">
+                {isSubmitting ? "Joining..." : "Join Waitlist"}
+              </Button>
+            </div>
+          </form>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <img src="/samples/img1.jpg" className="rounded-xl" alt="Sample 1" />
-          <img src="/samples/img2.jpg" className="rounded-xl" alt="Sample 2" />
-          <img src="/samples/img3.jpg" className="rounded-xl" alt="Sample 3" />
-          <img src="/samples/img4.jpg" className="rounded-xl" alt="Sample 4" />
+          {message && (
+            <p className="mt-4 text-sm text-gray-300">{message}</p>
+          )}
         </div>
 
-        <div className="text-center mt-8">
-          <button
-            onClick={handleStartCreating}
-            className="px-8 py-3 bg-[#C1272D] rounded-lg hover:bg-[#A02025] text-lg font-medium"
-          >
-            Generate Your Own
-          </button>
+        <div className="space-y-2 text-sm text-gray-300 mt-8">
+          <p>Early access is limited for first 200 users before 31st Dec.</p>
+          <p>Public pricing will be higher.</p>
+        </div>
+
+        <div className="mt-6 text-sm text-gray-400">
+          <p>
+            You’re on the waitlist. Access will be unlocked soon.
+          </p>
+        </div>
+
+        <div className="mt-10 text-left">
+          <p className="text-gray-400 mb-2">Live waitlist: {count} users</p>
+          <ul className="grid grid-cols-1 gap-2">
+            {recent.map((r, i) => (
+              <li key={i} className="text-gray-500 text-xs">
+                {r.email} • {r.status} • {new Date(r.joined_at).toLocaleString()} {r.role ? `• ${r.role}` : ""}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
-
-      {/* Sample Videos Section */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold mb-6">AI Video Samples</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <video src="/samples/video1.mp4" controls className="rounded-xl" />
-          <video src="/samples/video2.mp4" controls className="rounded-xl" />
-        </div>
-      </section>
-
     </main>
   );
 }
