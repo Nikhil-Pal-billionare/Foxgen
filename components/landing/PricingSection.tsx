@@ -51,11 +51,11 @@ const plans: Plan[] = [
 ];
 
 interface PricingSectionProps {
-  onSelectPlan: (planId: string) => void;
+  onSelectPlanAction: (planId: string) => void;
   loadingPlanId?: string | null;
 }
 
-export function PricingSection({ onSelectPlan, loadingPlanId }: PricingSectionProps) {
+export function PricingSection({ onSelectPlanAction, loadingPlanId }: PricingSectionProps) {
   return (
     <section className="py-12 w-full max-w-6xl mx-auto px-4">
       <h2 className="text-3xl font-bold text-center mb-10">Choose Your Early Access Plan</h2>
@@ -78,7 +78,7 @@ export function PricingSection({ onSelectPlan, loadingPlanId }: PricingSectionPr
             </ul>
 
             <Button 
-              onClick={() => onSelectPlan(plan.id)}
+              onClick={() => onSelectPlanAction(plan.id)}
               disabled={!!loadingPlanId}
               className={`w-full ${
                 plan.id === "plan-2" ? "bg-[#C1272D] hover:bg-[#A02025]" : "bg-gray-800 hover:bg-gray-700"
