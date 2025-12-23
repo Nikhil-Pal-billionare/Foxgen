@@ -1,5 +1,3 @@
-// utils/deductCredits.ts
-
 type DeductCreditsArgs = {
   amount: number;
   reason: string;
@@ -11,9 +9,14 @@ export async function deductCredits({
   reason,
   meta = {},
 }: DeductCreditsArgs) {
-  const res = await fetch("/api/credits/deduct", {
+  const baseUrl =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : "";
+
+  const res = await fetch(`${baseUrl}/api/credits/deduct`, {
     method: "POST",
-    credentials: "include", // 🔥 THIS FIXES UNAUTHORIZED
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
