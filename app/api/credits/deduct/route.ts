@@ -5,12 +5,12 @@ export async function POST(req: Request) {
   const supabase = createClient();
 
   const {
-  data: { user },
-} = await supabase.auth.getUser();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-console.log("SERVER USER:", user);
+  console.log("SERVER USER:", user);
 
-
+  // 🔐 Auth guard (DO NOT REMOVE)
   if (!user) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -20,6 +20,13 @@ console.log("SERVER USER:", user);
 
   const { amount, reason, meta } = await req.json();
 
+  // 🧪 TESTER MODE (SAFE SHORT-CIRCUIT)
+  if (process.env.TESTER_MODE === "true") {
+    console.log("🧪 TESTER MODE ENABLED — skipping credit deduction");
+    return NextResponse.json({ success: true });
+  }
+
+  // 💳 REAL CREDIT DEDUCTION (PRODUCTION)
   const { error } = await supabase.rpc("deduct_credits", {
     p_user_id: user.id,
     p_amount: amount,

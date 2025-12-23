@@ -10,4 +10,6 @@ export const CREDIT_COSTS = {
   SCRIPT_GENERATION: 10,
   THUMBNAIL_GENERATION: 40,
   VOICEOVER_PER_MIN: 16,
+  script: 10,
+  voice_per_minute: 16,
 };
