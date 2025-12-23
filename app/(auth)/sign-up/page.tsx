@@ -12,36 +12,23 @@ export default function SignUpPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function handleSignUp(e: any) {
-    e.preventDefault();
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) return alert(error.message);
-    router.push("/sign-in");
-  }
-
   return (
     <AuthCard>
 
       <FoxgenLogo size={90} />
 
-      <h2 className="text-center text-3xl font-bold mb-6">Create Account</h2>
-
-      <form className="space-y-4" onSubmit={handleSignUp}>
-        <InputField label="Email" id="email" type="email" value={email} onChange={setEmail} />
-        <InputField label="Password" id="password" type="password" value={password} onChange={setPassword} />
-
-        <Button className="w-full bg-[#C1272D] hover:bg-[#a02025]" type="submit">
-          Sign Up
-        </Button>
-
+      <h2 className="text-center text-3xl font-bold mb-4">Waitlist Only</h2>
+      <p className="text-center text-gray-300 mb-6">
+        Public signup is closed for launch phase.
+        Join the waitlist to be invited in batches.
+      </p>
+      <div className="space-y-3">
+        <Button className="w-full bg-[#C1272D] hover:bg-[#a02025]" onClick={() => router.push("/")}>Join Waitlist</Button>
         <p className="text-sm text-center mt-2 text-gray-400">
-          Already have an account?{" "}
+          Already invited?{" "}
           <a href="/sign-in" className="text-[#C1272D] underline">Sign In</a>
         </p>
-      </form>
+      </div>
     </AuthCard>
   );
 }
