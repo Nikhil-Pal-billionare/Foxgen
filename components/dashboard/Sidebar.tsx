@@ -7,9 +7,14 @@ import {
   CreditCard,
   History,
   Package,
+  Star,
 } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({
+  isInfluencer,
+}: {
+  isInfluencer: boolean;
+}) {
   return (
     <aside className="w-64 bg-[#0b0f19] border-r border-white/10 p-4">
       
@@ -33,7 +38,11 @@ export default function Sidebar() {
           href="/dashboard"
         />
 
-
+        <SidebarItem
+          icon={Package}
+          label="Products"
+          href="/dashboard/products"
+        />
 
         <SidebarItem
           icon={ImageIcon}
@@ -59,11 +68,18 @@ export default function Sidebar() {
           href="/dashboard/history"
         />
 
-        <SidebarItem
-          icon={Package}
-          label="Products"
-          href="/dashboard/products"
-        />
+        {/* Influencer Section */}
+        {isInfluencer && (
+          <>
+            <div className="border-t border-white/10 my-4" />
+
+            <SidebarItem
+              icon={Star}
+              label="Influencer"
+              href="/dashboard/influencer"
+            />
+          </>
+        )}
       </nav>
     </aside>
   );
