@@ -3,13 +3,13 @@
 type Props = {
   images: string[];
   selectedImage: string | null;
-  onSelect: (img: string) => void;
+  onSelectAction: (img: string) => void;
 };
 
 export default function ThumbnailVariations({
   images,
   selectedImage,
-  onSelect,
+  onSelectAction,
 }: Props) {
   return (
     <div>
@@ -19,7 +19,7 @@ export default function ThumbnailVariations({
         {images.map((img, idx) => (
           <button
             key={idx}
-            onClick={() => onSelect(img)}
+            onClick={() => onSelectAction(img)}
             className={`border rounded overflow-hidden transition ${
               selectedImage === img
                 ? "border-red-600"
