@@ -8,6 +8,7 @@ type Plan = {
   id: string;
   name: string;
   price: string;
+  originalPrice: string;
   features: string[];
 };
 
@@ -15,7 +16,8 @@ const plans: Plan[] = [
   {
     id: "plan-1",
     name: "Starter",
-    price: "₹499",
+    price: "₹668",
+    originalPrice: "₹1099",
     features: [
       "Up to 80 image generation/mo",
       "Up to 160min video generation/mo",
@@ -28,6 +30,7 @@ const plans: Plan[] = [
     id: "plan-2",
     name: "Pro",
     price: "₹999",
+    originalPrice: "₹1699",
     features: [
       "Up to 160 image generation/mo",
       "Up to 320min video generation/mo",
@@ -39,7 +42,8 @@ const plans: Plan[] = [
   {
     id: "plan-3",
     name: "Elite",
-    price: "₹1999",
+    price: "₹2649",
+    originalPrice: "₹3899",
     features: [
       "Up to 320 image generation/mo",
       "Up to 640min video generation/mo",
@@ -65,7 +69,10 @@ export function PricingSection({ onSelectPlanAction, loadingPlanId }: PricingSec
           <Card key={plan.id} className="p-6 bg-[#121212] border-gray-800 flex flex-col">
             <div className="mb-4">
               <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-              <div className="text-3xl font-extrabold text-[#C1272D] mt-2">{plan.price}<span className="text-sm text-gray-400 font-normal">/mo</span></div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-lg text-gray-500 line-through">{plan.originalPrice}</span>
+                <span className="text-3xl font-extrabold text-[#C1272D]">{plan.price}<span className="text-sm text-gray-400 font-normal">/mo</span></span>
+              </div>
             </div>
             
             <ul className="space-y-3 mb-8 flex-1">

@@ -9,7 +9,10 @@ export default function ImageGeneratorPage() {
 
   async function generateImage() {
     // TEMPORARY — Replace with real API in Module 4
-    await deductCredits(2, "AI Image Generation");
+  await deductCredits({
+  amount: 2,
+  reason: "AI Image Generation",
+});
 
     alert("This will generate an AI image in Module 4");
 

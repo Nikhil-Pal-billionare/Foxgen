@@ -137,12 +137,12 @@ export default function Home() {
         </h1>
 
         <p className="text-gray-300 text-base leading-relaxed mb-6">
-          We’re unlocking access in batches. Early users get huge discounts.
+          We’re unlocking access in batches. Early users get huge discounts (valid until Dec 31st).
         </p>
 
         {/* Pricing Plans */}
         <PricingSection
-          onSelectPlan={(planId) => startEarlyPayment(planId)}
+          onSelectPlanAction={(planId) => startEarlyPayment(planId)}
           loadingPlanId={checkoutLoading ? selectedPlan : undefined}
         />
 

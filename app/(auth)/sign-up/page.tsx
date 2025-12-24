@@ -8,6 +8,9 @@ import { createClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
 
+
+export const dynamic = "force-dynamic";
+
 export default function SignUpPage() {
   const router = useRouter();
   const supabase = createClient();
