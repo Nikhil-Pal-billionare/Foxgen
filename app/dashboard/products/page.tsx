@@ -61,7 +61,7 @@ export default function ProductsPage() {
           title="Thumbnail Generator"
           desc="Generate YouTube thumbnails"
           cost="40 credits"
-          onGenerate={() => router.push("/dashboard/thumbnail-generator")}
+          onGenerate={() => router.push("/dashboard/thumbnail")}
         />
 
         {/* AI Ads (WITH RESOLUTION) */}

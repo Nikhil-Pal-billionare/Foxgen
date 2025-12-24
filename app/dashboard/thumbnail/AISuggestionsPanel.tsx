@@ -1,10 +1,10 @@
 "use client";
 
 type Props = {
-  onSelectText: (text: string) => void;
+  onSelectTextAction: (text: string) => void;
 };
 
-export default function AISuggestionsPanel({ onSelectText }: Props) {
+export default function AISuggestionsPanel({ onSelectTextAction }: Props) {
 
   const suggestions = {
     hook: "Fear + urgency",
@@ -28,7 +28,7 @@ export default function AISuggestionsPanel({ onSelectText }: Props) {
           {suggestions.texts.map((text) => (
             <button
               key={text}
-              onClick={() => onSelectText(text)}
+              onClick={() => onSelectTextAction(text)}
               className="px-3 py-1 text-sm rounded bg-black border border-neutral-700 hover:border-red-600 transition"
             >
               {text}
