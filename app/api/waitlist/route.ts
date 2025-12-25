@@ -2,26 +2,36 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 
+/* =========================
+   SCHEMA
+========================= */
 const WaitlistSchema = z.object({
   email: z.string().email(),
   whatsapp: z.string().min(6).max(20).optional(),
   role: z.enum(["creator", "editor", "agency"]).optional(),
+  referralCode: z.string().optional(), // 👈 NEW
 });
 
-// Helper to get the best available client
+/* =========================
+   SUPABASE CLIENT HELPER
+========================= */
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+  // Prefer service role (server-side only)
   if (serviceKey) {
     return createClient(url, serviceKey);
   }
-  // Fallback to anon client (no cookies = anon role)
-  // This allows inserting if the RLS policy is "to anon"
+
+  // Fallback (requires anon insert RLS policy)
   return createClient(url, anonKey);
 }
 
+/* =========================
+   POST → JOIN WAITLIST
+========================= */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
 
@@ -30,64 +40,80 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { email, whatsapp, role } = parsed.data;
+  const { email, whatsapp, role, referralCode } = parsed.data;
+
+  // 🎯 Referral logic
+  let normalizedCode = referralCode?.trim().toUpperCase() ?? null;
+  let discountAmount = 0;
+
+  if (normalizedCode === "AVT100") {
+    discountAmount = 100;
+  } else {
+    normalizedCode = null; // ignore invalid codes silently
+  }
 
   const supabase = getSupabaseClient();
 
-  // Upsert by email
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("waitlist")
-    .upsert({ email, whatsapp, role, status: "waitlisted" }, { onConflict: "email" })
-    .select()
-    .single();
+    .upsert(
+      {
+        email,
+        whatsapp,
+        role,
+        status: "waitlisted",
+        referral_code: normalizedCode,
+        discount_amount: discountAmount,
+      },
+      { onConflict: "email" }
+    );
 
   if (error) {
-    // Check for RLS error when service key is missing
+    // RLS / config clarity
     if (error.code === "42501" && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("RLS Error: Missing SUPABASE_SERVICE_ROLE_KEY or 'waitlist_insert' policy for anon role.");
-      return NextResponse.json({ 
-        error: "Configuration Error: Please add SUPABASE_SERVICE_ROLE_KEY to .env.local OR run the SQL migration to allow anon inserts." 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error:
+            "Configuration Error: Please add SUPABASE_SERVICE_ROLE_KEY to .env.local OR allow anon inserts via RLS.",
+        },
+        { status: 500 }
+      );
     }
+
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({
-    message: "You’re on the waitlist. Early users will be given huge discounts in batches.",
-    entry: data,
+    success: true,
+    message:
+      discountAmount > 0
+        ? "You're on the waitlist 🎉 ₹100 discount will be applied when you upgrade."
+        : "You're on the waitlist. Early users will get special benefits.",
   });
 }
 
+/* =========================
+   GET → PUBLIC WAITLIST COUNT
+========================= */
 export async function GET() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  // If no service key, we can't read stats due to RLS (only service_role can read)
-  // Return empty stats to prevent page crash
+
   if (!serviceKey) {
-    return NextResponse.json({ count: 0, recent: [] });
+    // Fail-safe: never lie
+    return NextResponse.json({ count: 0 });
   }
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey
-  );
+  const supabaseAdmin = createClient(url, serviceKey);
 
-  const [countRes, listRes] = await Promise.all([
-    supabaseAdmin.from("waitlist").select("id", { count: "exact", head: true }),
-    supabaseAdmin
-      .from("waitlist")
-      .select("id", { count: "exact", head: true })
-      .order("joined_at", { ascending: false })
-      .limit(10),
-  ]);
-
-  const count = countRes.count ?? 0;
-  const list = listRes.data ?? [];
-  const error = countRes.error || listRes.error;
+  const { count, error } = await supabaseAdmin
+    .from("waitlist")
+    .select("*", { count: "exact", head: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ count: 0 });
   }
 
-  return NextResponse.json({ count });
+  return NextResponse.json({ count: count ?? 0 });
 }
+
