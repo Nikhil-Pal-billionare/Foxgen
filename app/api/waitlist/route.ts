@@ -76,7 +76,7 @@ export async function GET() {
     supabaseAdmin.from("waitlist").select("id", { count: "exact", head: true }),
     supabaseAdmin
       .from("waitlist")
-      .select("email, status, joined_at, role")
+      .select("id", { count: "exact", head: true })
       .order("joined_at", { ascending: false })
       .limit(10),
   ]);
@@ -89,5 +89,5 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ count, recent: list });
+  return NextResponse.json({ count });
 }
