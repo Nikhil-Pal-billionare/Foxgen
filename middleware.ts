@@ -12,12 +12,13 @@ export async function middleware(req: NextRequest) {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:", // 🔥 REQUIRED FOR AUDIO
       "connect-src 'self' https:",
       "font-src 'self' https: data:",
+      "frame-src 'self' https://api.razorpay.com",
     ].join("; ")
   );
 
