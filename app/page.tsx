@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
 
@@ -11,6 +12,7 @@ import { PricingSection } from "@/components/landing/PricingSection";
 type RecentEntry = { email: string; status: string; joined_at: string; role?: string };
 
 export default function Home() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [role, setRole] = useState<string>("");
@@ -78,12 +80,17 @@ export default function Home() {
 
       // Load Razorpay script
       await new Promise((resolve, reject) => {
-        const existing = document.querySelector("script[src='https://checkout.razorpay.com/v1/checkout.js']");
-        if (existing) return resolve(true);
+        if ((window as any).Razorpay) return resolve(true);
+        const src = "https://checkout.razorpay.com/v1/checkout.js";
+        
+        // Remove any existing script to ensure fresh load on retry
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) existing.remove();
+
         const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.src = src;
         script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("Failed to load payment script"));
+        script.onerror = () => reject(new Error("Failed to load payment script. Check internet or ad-blockers."));
         document.body.appendChild(script);
       });
 
@@ -111,7 +118,8 @@ export default function Home() {
           if (!verifyRes.ok) {
             setMessage(v.error || "Payment verification failed");
           } else {
-            setMessage("Payment successful. You now have early access.");
+            setMessage("Payment successful. Redirecting...");
+            router.push("/dashboard");
           }
         },
         theme: { color: "#C1272D" },
@@ -127,6 +135,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0D0D0D] text-white">
+      <div className="bg-[#C1272D] text-white text-center py-2 px-4 font-medium">
+        Join waitlist to get 20% discount lifetime
+      </div>
       <section className="text-center py-10 px-6 space-y-6 max-w-5xl mx-auto">
         <div className="mb-2">
           <FoxgenLogo size={120} />
