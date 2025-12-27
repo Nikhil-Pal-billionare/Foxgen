@@ -268,9 +268,30 @@ export default function Home() {
               </select>
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Joining..." : "Join Waitlist"}
-            </Button>
+            <Button
+  type="submit"
+  disabled={isSubmitting}
+  className="
+    mt-6 w-full
+    bg-red-600 text-white
+    hover:bg-red-700
+    active:bg-red-800
+    disabled:bg-red-600/40
+    disabled:cursor-not-allowed
+    font-semibold
+    py-3
+    rounded-md
+    transition
+    focus:outline-none
+    focus:ring-2
+    focus:ring-red-500
+    focus:ring-offset-2
+    focus:ring-offset-[#121212]
+  "
+>
+  {isSubmitting ? "Joining..." : "Join Waitlist"}
+</Button>
+
           </form>
 
           {message && (
