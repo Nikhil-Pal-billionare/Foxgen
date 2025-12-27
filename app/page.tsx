@@ -125,18 +125,15 @@ export default function Home() {
         const src = "https://checkout.razorpay.com/v1/checkout.js";
         
         // Remove any existing script to ensure fresh load on retry
-        const existing = document.querySelector(`script[src="${src}"]`);
-        if (existing) existing.remove();
+        const existingScript = document.querySelector(`script[src="${src}"]`);
+        if (existingScript) existingScript.remove();
 
-        const existing = document.querySelector(
-          "script[src='https://checkout.razorpay.com/v1/checkout.js']"
-        );
-        if (existing) return resolve(true);
+        const present = document.querySelector(`script[src="${src}"]`);
+        if (present) return resolve(true);
         const script = document.createElement("script");
         script.src = src;
         script.onload = () => resolve(true);
         script.onerror = () => reject(new Error("Failed to load payment script. Check internet or ad-blockers."));
-        script.onerror = () => reject(new Error("Failed to load Razorpay"));
         document.body.appendChild(script);
       });
 
