@@ -3,9 +3,9 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 
 const PLANS: Record<string, { amount: number; name: string }> = {
-  "plan-1": { amount: 49900, name: "Starter Plan" }, // 499 INR
-  "plan-2": { amount: 99900, name: "Pro Plan" },     // 999 INR
-  "plan-3": { amount: 199900, name: "Elite Plan" },  // 1999 INR
+  "plan-1": { amount: 668, name: "Starter Plan" },
+  "plan-2": { amount: 999, name: "Pro Plan" },     
+  "plan-3": { amount: 2649, name: "Elite Plan" }, 
 };
 
 export async function POST(req: Request) {
