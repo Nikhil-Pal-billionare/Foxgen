@@ -253,15 +253,16 @@ export default function Home() {
         {/* =========================
            PRICING (REGION BASED)
         ========================= */}
-        {!pricingLoading && pricing && (
-          <PricingSection
-            {...({
-              pricing,
-              onSelectPlanAction: (planId: string) => startEarlyPayment(planId),
-              loadingPlanId: checkoutLoading ? selectedPlan : undefined,
-            } as any)}
-          />
-        )}
+{!pricingLoading && pricing && (
+  <PricingSection
+    pricing={pricing!}
+    loadingPlanId={selectedPlan}
+    onSelectPlanAction={(planId) => {
+      router.push(`/payment?plan=${planId}`);
+    }}
+  />
+
+)}
 
         {/* =========================
            WAITLIST FORM
