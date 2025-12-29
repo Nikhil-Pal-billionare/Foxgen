@@ -9,15 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PricingSection } from "@/components/landing/PricingSection";
 
-type RecentEntry = {
-  email: string;
-  status: string;
-  joined_at: string;
-  role?: string;
+type PricingResponse = {
+  currency: string;
+  symbol: string;
+  plans: Record<string, number>;
+  originalPlans?: Record<string, number>;
 };
 
 export default function Home() {
   const router = useRouter();
+
+  /* =========================
+     FORM STATE
+  ========================= */
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [role, setRole] = useState<string>("");
@@ -26,6 +30,15 @@ export default function Home() {
   const [isSubmitting, setSubmitting] = useState(false);
   const [count, setCount] = useState<number>(0);
 
+  /* =========================
+     PRICING STATE (NEW)
+  ========================= */
+  const [pricing, setPricing] = useState<PricingResponse | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(true);
+
+  /* =========================
+     PAYMENT STATE
+  ========================= */
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
 
@@ -36,15 +49,26 @@ export default function Home() {
   const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
   const [discountError, setDiscountError] = useState<string>("");
 
+  /* =========================
+     INITIAL LOAD
+  ========================= */
   useEffect(() => {
+    // waitlist count
     fetch("/api/waitlist")
       .then((r) => r.json())
       .then((data) => setCount(data.count ?? 0))
       .catch(() => {});
+
+    // pricing (region-based, backend controlled)
+    fetch("/api/pricing")
+      .then((r) => r.json())
+      .then((data) => setPricing(data))
+      .catch(() => {})
+      .finally(() => setPricingLoading(false));
   }, []);
 
   /* =========================
-     APPLY DISCOUNT
+     APPLY DISCOUNT (UI ONLY)
   ========================= */
   function applyDiscount() {
     const code = discountCode.trim().toUpperCase();
@@ -123,17 +147,19 @@ export default function Home() {
       await new Promise((resolve, reject) => {
         if ((window as any).Razorpay) return resolve(true);
         const src = "https://checkout.razorpay.com/v1/checkout.js";
-        
-        // Remove any existing script to ensure fresh load on retry
-        const existingScript = document.querySelector(`script[src="${src}"]`);
-        if (existingScript) existingScript.remove();
 
-        const present = document.querySelector(`script[src="${src}"]`);
-        if (present) return resolve(true);
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) existing.remove();
+
         const script = document.createElement("script");
         script.src = src;
         script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("Failed to load payment script. Check internet or ad-blockers."));
+        script.onerror = () =>
+          reject(
+            new Error(
+              "Failed to load payment script. Check internet or ad-blockers."
+            )
+          );
         document.body.appendChild(script);
       });
 
@@ -146,7 +172,6 @@ export default function Home() {
         prefill: { email },
         notes: { email, planId },
         handler: async function (response: any) {
-          // Verify signature
           const verifyRes = await fetch("/api/payments/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -157,6 +182,7 @@ export default function Home() {
               email,
             }),
           });
+
           const v = await verifyRes.json();
           if (!verifyRes.ok) {
             setMessage(v.error || "Payment verification failed");
@@ -179,9 +205,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="bg-[#C1272D] text-white text-center py-2 px-4 font-medium">
+      <div className="bg-[#C1272D] text-center py-2 font-medium">
         Join waitlist to get 20% discount lifetime
       </div>
+
       <section className="text-center py-10 px-6 space-y-6 max-w-5xl mx-auto">
         <FoxgenLogo size={120} />
 
@@ -212,7 +239,7 @@ export default function Home() {
 
           {appliedDiscount > 0 && (
             <p className="text-green-400 text-sm mt-2">
-              🎉 ₹100 discount applied to Pro & Elite plans
+              🎉 Discount applied
             </p>
           )}
 
@@ -224,12 +251,17 @@ export default function Home() {
         </div>
 
         {/* =========================
-           PRICING
+           PRICING (REGION BASED)
         ========================= */}
-        <PricingSection
-          onSelectPlanAction={(planId) => startEarlyPayment(planId)}
-          loadingPlanId={checkoutLoading ? selectedPlan : undefined}
-        />
+        {!pricingLoading && pricing && (
+          <PricingSection
+            {...({
+              pricing,
+              onSelectPlanAction: (planId: string) => startEarlyPayment(planId),
+              loadingPlanId: checkoutLoading ? selectedPlan : undefined,
+            } as any)}
+          />
+        )}
 
         {/* =========================
            WAITLIST FORM
@@ -269,29 +301,27 @@ export default function Home() {
             </div>
 
             <Button
-  type="submit"
-  disabled={isSubmitting}
-  className="
-    mt-6 w-full
-    bg-red-600 text-white
-    hover:bg-red-700
-    active:bg-red-800
-    disabled:bg-red-600/40
-    disabled:cursor-not-allowed
-    font-semibold
-    py-3
-    rounded-md
-    transition
-    focus:outline-none
-    focus:ring-2
-    focus:ring-red-500
-    focus:ring-offset-2
-    focus:ring-offset-[#121212]
-  "
->
-  {isSubmitting ? "Joining..." : "Join Waitlist"}
-</Button>
-
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                mt-6 w-full
+                bg-red-600 text-white
+                hover:bg-red-700
+                active:bg-red-800
+                disabled:bg-red-600/40
+                disabled:cursor-not-allowed
+                font-semibold
+                py-3
+                rounded-md
+                transition
+                focus:ring-2
+                focus:ring-red-500
+                focus:ring-offset-2
+                focus:ring-offset-[#121212]
+              "
+            >
+              {isSubmitting ? "Joining..." : "Join Waitlist"}
+            </Button>
           </form>
 
           {message && (

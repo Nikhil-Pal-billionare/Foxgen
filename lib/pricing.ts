@@ -8,3 +8,23 @@ export function applyDiscount(
   }
   return Math.max(amount - value, 0);
 }
+export const PRICING = {
+  INR: {
+    currency: "INR",
+    symbol: "₹",
+    plans: {
+      starter: 668,
+      pro: 999,
+      elite: 2649,
+    },
+  },
+  USD: {
+    currency: "USD",
+    symbol: "$",
+    plans: {
+      starter: 9,
+      pro: 12,
+      elite: 30,
+    },
+  },
+};
