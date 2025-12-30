@@ -5,19 +5,19 @@ import { deductCredits } from "@/utils/deductCredits";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 
 export default function ImageGeneratorPage() {
-  const [mode, setMode] = useState<"direct" | "enhance">("direct");
   const [prompt, setPrompt] = useState("");
-  const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   /* =========================
-     ENHANCE PROMPT (Gemini)
+     ENHANCE / RE-ENHANCE PROMPT
+     (OVERWRITE SAME TEXTAREA)
   ========================= */
   const enhancePrompt = async () => {
     if (!prompt.trim()) return;
 
-    setLoading(true);
+    setEnhancing(true);
     try {
       const res = await fetch("/api/prompt/enhance", {
         method: "POST",
@@ -28,44 +28,20 @@ export default function ImageGeneratorPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Prompt enhancement failed");
 
-      setEnhancedPrompt(data.enhancedPrompt);
+      // 🔥 OVERWRITE SAME BOX
+      setPrompt(data.enhancedPrompt);
     } catch (err: any) {
       alert(err.message || "Failed to enhance prompt");
     } finally {
-      setLoading(false);
-    }
-  };
-
-  /* =========================
-     RE-ENHANCE PROMPT
-  ========================= */
-  const reEnhancePrompt = async () => {
-    if (!enhancedPrompt.trim()) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/prompt/enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: enhancedPrompt }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Re-enhancement failed");
-
-      setEnhancedPrompt(data.enhancedPrompt);
-    } catch (err: any) {
-      alert(err.message || "Failed to re-enhance prompt");
-    } finally {
-      setLoading(false);
+      setEnhancing(false);
     }
   };
 
   /* =========================
      GENERATE IMAGE
   ========================= */
-  const generateImage = async (finalPrompt: string) => {
-    if (!finalPrompt.trim()) return;
+  const generateImage = async () => {
+    if (!prompt.trim()) return;
 
     setLoading(true);
     setImageUrl(null);
@@ -75,7 +51,7 @@ export default function ImageGeneratorPage() {
       await deductCredits({
         amount: CREDIT_COSTS.TEXT_TO_IMAGE,
         reason: "Text to Image generation",
-        meta: { prompt: finalPrompt },
+        meta: { prompt },
       });
 
       // 2️⃣ Call Image API
@@ -83,7 +59,7 @@ export default function ImageGeneratorPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: finalPrompt }),
+        body: JSON.stringify({ prompt }),
       });
 
       const data = await res.json();
@@ -106,7 +82,6 @@ export default function ImageGeneratorPage() {
       const reader = new FileReader();
       reader.onloadend = () => setImageUrl(reader.result as string);
       reader.readAsDataURL(blob);
-
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Something went wrong");
@@ -129,136 +104,50 @@ export default function ImageGeneratorPage() {
           </p>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setMode("direct");
-              setEnhancedPrompt("");
-            }}
-            className={`px-4 py-2 rounded border transition ${
-              mode === "direct"
-                ? "bg-[#C1272D] border-[#C1272D]"
-                : "border-neutral-700 hover:bg-neutral-800"
-            }`}
-          >
-            Direct Prompt
-          </button>
-
-          <button
-            onClick={() => {
-              setMode("enhance");
-              setEnhancedPrompt("");
-            }}
-            className={`px-4 py-2 rounded border transition ${
-              mode === "enhance"
-                ? "bg-[#C1272D] border-[#C1272D]"
-                : "border-neutral-700 hover:bg-neutral-800"
-            }`}
-          >
-            ✨ Enhance Prompt
-          </button>
-        </div>
-
-        {/* Prompt Input */}
+        {/* Prompt Box */}
         <div className="bg-[#121212] border border-gray-800 rounded-xl p-6 space-y-4">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A futuristic AI startup office with neon lighting..."
+            placeholder="Describe the image you want..."
             className="
-              w-full min-h-[120px]
+              w-full min-h-[140px]
               bg-black text-white
               border border-neutral-700
               rounded p-4 resize-none
             "
           />
 
-          {/* Direct Generate */}
-          {mode === "direct" && (
+          {/* Action Buttons */}
+          <div className="flex gap-3">
             <button
-              onClick={() => generateImage(prompt)}
-              disabled={loading}
+              onClick={enhancePrompt}
+              disabled={enhancing}
               className="
-                w-full py-3
+                px-4 py-2
+                border border-neutral-600
                 bg-red-600 hover:bg-red-700
                 rounded font-semibold
                 disabled:opacity-60
               "
             >
-              {loading
-                ? "Generating..."
-                : `Generate Image (${CREDIT_COSTS.TEXT_TO_IMAGE} credits)`}
+              {enhancing ? "Enhancing..." : "Enhance / Re-enhance Prompt ✨"}
             </button>
-          )}
 
-          {/* Enhance Prompt */}
-          {mode === "enhance" && !enhancedPrompt && (
             <button
-              onClick={enhancePrompt}
+              onClick={generateImage}
               disabled={loading}
               className="
-                w-full py-3
-                border border-neutral-600
-                hover:bg-neutral-800
+                ml-auto px-6 py-2
+                bg-red-600 hover:bg-red-700
                 rounded font-semibold
+                disabled:opacity-60
               "
             >
-              {loading ? "Enhancing..." : "Enhance Prompt ✨"}
+              {loading ? "Generating..." : "Generate Image (20 credits)"}
             </button>
-          )}
-        </div>
-
-        {/* Enhanced Prompt Section */}
-        {enhancedPrompt && (
-          <div className="bg-[#1A1A1A] border border-gray-700 rounded-xl p-6 space-y-4">
-            <p className="text-sm text-gray-400">
-              Enhanced Prompt (editable)
-            </p>
-
-            <textarea
-              value={enhancedPrompt}
-              onChange={(e) => setEnhancedPrompt(e.target.value)}
-              className="
-                w-full min-h-[140px]
-                bg-black text-white
-                border border-neutral-700
-                rounded p-4 resize-none
-              "
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={reEnhancePrompt}
-                disabled={loading}
-                className="
-                  flex-1 py-3
-                  border border-neutral-600
-                  hover:bg-neutral-800
-                  rounded font-semibold
-                  disabled:opacity-60
-                "
-              >
-                {loading ? "Re-enhancing..." : "🔄 Re-enhance Prompt"}
-              </button>
-
-              <button
-                onClick={() => generateImage(enhancedPrompt)}
-                disabled={loading}
-                className="
-                  flex-1 py-3
-                  bg-red-600 hover:bg-red-700
-                  rounded font-semibold
-                  disabled:opacity-60
-                "
-              >
-                {loading
-                  ? "Generating..."
-                  : `Generate Image (${CREDIT_COSTS.TEXT_TO_IMAGE} credits)`}
-              </button>
-            </div>
           </div>
-        )}
+        </div>
 
         {/* Image Result */}
         {imageUrl && (
