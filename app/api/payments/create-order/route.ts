@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     const country =
       h.get("cf-ipcountry") ||
       h.get("x-vercel-ip-country") ||
-      "IN"; // unknown → USD
+      "US"; // unknown → USD
 
     const isIndia = country === "IN";
 
