@@ -22,9 +22,9 @@ export const PRICING = {
     currency: "USD",
     symbol: "$",
     plans: {
-      starter: 9,
-      pro: 12,
-      elite: 30,
+      starter: 16,
+      pro: 34,
+      elite: 44,
     },
   },
 };
