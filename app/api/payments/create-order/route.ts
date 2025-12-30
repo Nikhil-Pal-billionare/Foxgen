@@ -7,11 +7,13 @@ import { applyDiscount } from "@/lib/pricing";
 /* =========================
    PLAN NAME MAP
 ========================= */
-const PLAN_NAMES: Record<string, string> = {
+const PLAN_NAMES = {
   starter: "Starter Plan",
   pro: "Pro Plan",
   elite: "Elite Plan",
-};
+} as const;
+
+type PlanId = keyof typeof PLAN_NAMES;
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +24,9 @@ export async function POST(req: Request) {
       discountCode?: unknown;
     };
 
-    // normalize and type-guard planId so TypeScript knows it's one of the known keys
-    type PlanId = keyof typeof PLAN_NAMES;
-    const planId: PlanId | undefined =
-      typeof rawPlanId === "string" && rawPlanId in PLAN_NAMES
-        ? (rawPlanId as PlanId)
-        : undefined;
-
+    /* =========================
+       VALIDATION
+    ========================= */
     if (!email || typeof email !== "string") {
       return NextResponse.json(
         { error: "Email is required" },
@@ -36,7 +34,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!planId || !PLAN_NAMES[planId]) {
+    const planId =
+      typeof rawPlanId === "string" && rawPlanId in PLAN_NAMES
+        ? (rawPlanId as PlanId)
+        : null;
+
+    if (!planId) {
       return NextResponse.json(
         { error: "Invalid plan selected" },
         { status: 400 }
@@ -44,57 +47,48 @@ export async function POST(req: Request) {
     }
 
     /* =========================
-       REGION DETECTION (CF)
+       REGION DETECTION
     ========================= */
-    const country = headers().get("cf-ipcountry");
+    const h = headers();
 
-    const regionPricing =
-      country === "IN" ? PRICING.INR : PRICING.USD;
+    const country =
+      h.get("cf-ipcountry") ||
+      h.get("x-vercel-ip-country") ||
+      "IN"; // unknown → USD
 
-    const currency = regionPricing.currency;
+    const isIndia = country === "IN";
 
     /* =========================
-           BASE PRICE
-        ========================= */
-        const planEntry = planId
-          ? regionPricing.plans[planId as keyof typeof regionPricing.plans]
-          : undefined;
-    
-        if (!planEntry) {
-          return NextResponse.json(
-            { error: "Plan pricing not found" },
-            { status: 400 }
-          );
-        }
-    
-        const baseAmount = planEntry.discounted;
-
-/* =========================
-       DISCOUNT (BACKEND ONLY)
+       PRICING SELECTION
     ========================= */
-    const planPricing = planEntry;
+    const regionPricing = isIndia ? PRICING.INR : PRICING.USD;
+    const currency = isIndia ? "INR" : "USD";
 
-if (!planPricing) {
-  return NextResponse.json(
-    { error: "Plan pricing not found" },
-    { status: 400 }
-  );
-}
+    const planEntry = regionPricing.plans[planId];
 
-// ✅ DEFAULT = launch discounted price
-let finalAmount: number = planPricing.discounted;
-
-
-    if (discountCode === "AVT100") {
-      // Flat discount per region
-      finalAmount =
-        country === "IN"
-          ? applyDiscount(baseAmount, "flat", 100)
-          : applyDiscount(baseAmount, "flat", 5);
+    if (!planEntry) {
+      return NextResponse.json(
+        { error: "Plan pricing not found" },
+        { status: 400 }
+      );
     }
 
     /* =========================
-       RAZORPAY SETUP
+       BASE AMOUNT
+    ========================= */
+    let finalAmount: number = planEntry.discounted;
+
+    /* =========================
+       DISCOUNT (OPTIONAL)
+    ========================= */
+    if (discountCode === "AVT100") {
+      finalAmount = isIndia
+        ? applyDiscount(finalAmount, "flat", 100)
+        : applyDiscount(finalAmount, "flat", 5);
+    }
+
+    /* =========================
+       RAZORPAY INIT
     ========================= */
     const key_id = process.env.RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
@@ -110,18 +104,17 @@ let finalAmount: number = planPricing.discounted;
 
     /* =========================
        CREATE ORDER
-       Razorpay expects amount in
-       smallest currency unit
+       (smallest currency unit)
     ========================= */
     const order = await rp.orders.create({
-      amount: Math.round(finalAmount * 100), // ₹ → paise, $ → cents
-      currency,
-      receipt: `foxgen-${Date.now()}`,
+      amount: Math.round(finalAmount * 100), // paise / cents
+      currency, // INR or USD
+      receipt: `foxgen-${planId}-${Date.now()}`,
       notes: {
         email,
         planId,
         planName: PLAN_NAMES[planId],
-        country: country ?? "UNKNOWN",
+        country,
         currency,
       },
     });
@@ -129,8 +122,8 @@ let finalAmount: number = planPricing.discounted;
     return NextResponse.json({
       order,
       key_id,
-      planName: PLAN_NAMES[planId],
       currency,
+      planName: PLAN_NAMES[planId],
     });
   } catch (err: any) {
     console.error("CREATE ORDER ERROR:", err);

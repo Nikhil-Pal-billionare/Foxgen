@@ -10,7 +10,10 @@ import { Card } from "@/components/ui/card";
 type PricingData = {
   currency: string;
   symbol: string;
-  plans: Record<string, { original: number; discounted: number }>;
+  plans: Record<
+    "starter" | "pro" | "elite",
+    { original: number; discounted: number }
+  >;
 };
 
 interface PricingSectionProps {
@@ -20,9 +23,20 @@ interface PricingSectionProps {
 }
 
 /* =========================
-   PLAN METADATA (NO PRICES)
+   PLAN METADATA
 ========================= */
 const PLAN_META = [
+  {
+    id: "free",
+    name: "Free",
+    isFree: true,
+    features: [
+      "2 image generations",
+      "2 min video generation",
+      "1 script generation",
+      "1 voiceover (TTS)",
+    ],
+  },
   {
     id: "starter",
     name: "Starter",
@@ -57,7 +71,7 @@ const PLAN_META = [
       "Up to 200 thumbnail generations",
     ],
   },
-];
+] as const;
 
 /* =========================
    COMPONENT
@@ -67,45 +81,55 @@ export function PricingSection({
   onSelectPlanAction,
   loadingPlanId,
 }: PricingSectionProps) {
+  if (!pricing?.plans) return null;
+
   return (
     <section className="py-12 w-full max-w-6xl mx-auto px-4">
       <h2 className="text-3xl font-bold text-center mb-10">
         Choose Your Early Access Plan
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {PLAN_META.map((plan) => {
-          const planData = pricing.plans[plan.id];
-          const price = planData?.discounted;
-          const originalPrice = planData?.original;
+          const planData =
+            plan.id === "free" ? null : pricing.plans[plan.id];
 
           return (
             <Card
               key={plan.id}
-              className="p-6 bg-[#121212] border-gray-800 flex flex-col"
+              className="p-6 bg-[#121212] border border-gray-800 flex flex-col"
             >
               {/* Header */}
-              <div className="mb-4">
+              <div className="mb-6">
                 <h3 className="text-xl font-bold text-white">
                   {plan.name}
                 </h3>
 
-                <div className="mt-2 flex items-baseline gap-2">
-                  {originalPrice && (
+                {/* Price */}
+                {plan.id === "free" ? (
+                  <div className="mt-2">
+                    <span className="text-3xl font-extrabold text-[#C1272D]">
+                      {pricing.symbol}0
+                    </span>
+                    <span className="text-sm text-gray-400"> /forever</span>
+                  </div>
+                ) : (
+                  <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-lg text-gray-500 line-through">
                       {pricing.symbol}
-                      {originalPrice}
+                      {planData!.original}
                     </span>
-                  )}
 
-                  <span className="text-3xl font-extrabold text-[#C1272D]">
-                    {pricing.symbol}
-                    {price}
-                    <span className="text-sm text-gray-400 font-normal">
-                      /mo
+                    <span className="text-3xl font-extrabold text-[#C1272D]">
+                      {pricing.symbol}
+                      {planData!.discounted}
+                      <span className="text-sm text-gray-400 font-normal">
+                        {" "}
+                        /mo
+                      </span>
                     </span>
-                  </span>
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Features */}
@@ -125,14 +149,16 @@ export function PricingSection({
               <Button
                 onClick={() => onSelectPlanAction(plan.id)}
                 disabled={!!loadingPlanId}
-                className={`w-full ${
-                  plan.highlight
-                    ? "bg-[#C1272D] hover:bg-[#A02025]"
-                    : "bg-gray-800 hover:bg-gray-700"
-                }`}
+                className="
+                  w-full bg-[#C1272D]
+                  hover:bg-[#A02025]
+                  disabled:bg-[#C1272D]/50
+                "
               >
                 {loadingPlanId === plan.id
                   ? "Processing..."
+                  : plan.id === "free"
+                  ? "Start Free"
                   : "Select Plan"}
               </Button>
             </Card>
@@ -140,16 +166,17 @@ export function PricingSection({
         })}
       </div>
 
-      {/* Footer note */}
+      {/* Footer */}
       <div className="mt-12 text-center max-w-2xl mx-auto p-6 bg-[#1A1A1A] rounded-xl border border-gray-800">
         <p className="text-gray-300 text-sm leading-relaxed">
-          <span className="font-semibold text-white">Note:</span> Your plan
-          includes a flexible credit balance that can be used across all AI
-          tools. Usage varies depending on the type of content you create.
+          <span className="font-semibold text-white">Note:</span>{" "}
+          Prices are shown in{" "}
+          <span className="font-semibold text-white">
+            {pricing.currency}
+          </span>{" "}
+          based on your region. Free plan is always available.
         </p>
       </div>
     </section>
   );
 }
-
-
