@@ -12,8 +12,7 @@ import { PricingSection } from "@/components/landing/PricingSection";
 type PricingResponse = {
   currency: string;
   symbol: string;
-  plans: Record<string, number>;
-  originalPlans?: Record<string, number>;
+  plans: Record<string, { original: number; discounted: number }>;
 };
 
 export default function Home() {
@@ -253,16 +252,15 @@ export default function Home() {
         {/* =========================
            PRICING (REGION BASED)
         ========================= */}
-{!pricingLoading && pricing && (
-  <PricingSection
-    pricing={pricing!}
-    loadingPlanId={selectedPlan}
-    onSelectPlanAction={(planId) => {
-      router.push(`/payment?plan=${planId}`);
-    }}
-  />
-
-)}
+        {!pricingLoading && pricing && (
+          <PricingSection
+            pricing={pricing!}
+            loadingPlanId={selectedPlan}
+            onSelectPlanAction={(planId) => {
+              router.push(`/payment?plan=${planId}`);
+            }}
+          />
+        )}
 
         {/* =========================
            WAITLIST FORM

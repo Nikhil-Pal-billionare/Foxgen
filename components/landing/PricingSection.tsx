@@ -10,8 +10,7 @@ import { Card } from "@/components/ui/card";
 type PricingData = {
   currency: string;
   symbol: string;
-  plans: Record<string, number>;
-  originalPlans?: Record<string, number>;
+  plans: Record<string, { original: number; discounted: number }>;
 };
 
 interface PricingSectionProps {
@@ -76,8 +75,9 @@ export function PricingSection({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {PLAN_META.map((plan) => {
-          const price = pricing.plans[plan.id];
-          const originalPrice = pricing.originalPlans?.[plan.id];
+          const planData = pricing.plans[plan.id];
+          const price = planData?.discounted;
+          const originalPrice = planData?.original;
 
           return (
             <Card
