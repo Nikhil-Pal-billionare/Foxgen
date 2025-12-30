@@ -1,337 +1,86 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
-
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { PricingSection } from "@/components/landing/PricingSection";
-
-type PricingResponse = {
-  currency: string;
-  symbol: string;
-  plans: Record<string, { original: number; discounted: number }>;
-};
+import { createClient } from "@/lib/supabaseClient";
 
 export default function Home() {
   const router = useRouter();
+  const supabase = createClient();
 
-  /* =========================
-     FORM STATE
-  ========================= */
-  const [email, setEmail] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [role, setRole] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [message, setMessage] = useState<string>("");
-  const [isSubmitting, setSubmitting] = useState(false);
-  const [count, setCount] = useState<number>(0);
-
-  /* =========================
-     PRICING STATE (NEW)
-  ========================= */
-  const [pricing, setPricing] = useState<PricingResponse | null>(null);
-  const [pricingLoading, setPricingLoading] = useState(true);
-
-  /* =========================
-     PAYMENT STATE
-  ========================= */
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string>("");
-
-  /* =========================
-     DISCOUNT STATE
-  ========================= */
-  const [discountCode, setDiscountCode] = useState("");
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
-  const [discountError, setDiscountError] = useState<string>("");
-
-  /* =========================
-     INITIAL LOAD
-  ========================= */
   useEffect(() => {
-    // waitlist count
-    fetch("/api/waitlist")
-      .then((r) => r.json())
-      .then((data) => setCount(data.count ?? 0))
-      .catch(() => {});
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(!!data.user);
+      setLoading(false);
+    });
+  }, [supabase]);
 
-    // pricing (region-based, backend controlled)
-    fetch("/api/pricing")
-      .then((r) => r.json())
-      .then((data) => setPricing(data))
-      .catch(() => {})
-      .finally(() => setPricingLoading(false));
-  }, []);
-
-  /* =========================
-     APPLY DISCOUNT (UI ONLY)
-  ========================= */
-  function applyDiscount() {
-    const code = discountCode.trim().toUpperCase();
-    setDiscountError("");
-
-    if (code === "AVT100") {
-      setAppliedDiscount(100);
+  const handleStartCreating = () => {
+    if (isLoggedIn) {
+      router.push("/sign-in");
     } else {
-      setAppliedDiscount(0);
-      setDiscountError("Invalid discount code");
+      router.push("/sign-in");
     }
-  }
+  };
 
-  /* =========================
-     JOIN WAITLIST
-  ========================= */
-  async function joinWaitlist(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setMessage("");
-
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          whatsapp: whatsapp || undefined,
-          role: role || undefined,
-          referralCode: appliedDiscount > 0 ? "AVT100" : undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
-
-      setMessage(data.message);
-      setEmail("");
-      setWhatsapp("");
-      setRole("");
-    } catch (err: any) {
-      setMessage(err.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  /* =========================
-     PAYMENT
-  ========================= */
-  async function startEarlyPayment(planId: string) {
-    if (!email) {
-      setMessage("Please enter your email first");
-      return;
-    }
-
-    setCheckoutLoading(true);
-    setSelectedPlan(planId);
-
-    try {
-      const res = await fetch("/api/payments/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          planId,
-          discountCode: appliedDiscount > 0 ? "AVT100" : undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Payment failed");
-
-      const { order, key_id, planName } = data;
-
-      await new Promise((resolve, reject) => {
-        if ((window as any).Razorpay) return resolve(true);
-        const src = "https://checkout.razorpay.com/v1/checkout.js";
-
-        const existing = document.querySelector(`script[src="${src}"]`);
-        if (existing) existing.remove();
-
-        const script = document.createElement("script");
-        script.src = src;
-        script.onload = () => resolve(true);
-        script.onerror = () =>
-          reject(
-            new Error(
-              "Failed to load payment script. Check internet or ad-blockers."
-            )
-          );
-        document.body.appendChild(script);
-      });
-
-      // @ts-ignore
-      const rzp = new window.Razorpay({
-        key: key_id,
-        order_id: order.id,
-        name: `Foxgen Early Access - ${planName}`,
-        description: "Launch phase discounted access",
-        prefill: { email },
-        notes: { email, planId },
-        handler: async function (response: any) {
-          const verifyRes = await fetch("/api/payments/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              email,
-            }),
-          });
-
-          const v = await verifyRes.json();
-          if (!verifyRes.ok) {
-            setMessage(v.error || "Payment verification failed");
-          } else {
-            setMessage("Payment successful. Redirecting...");
-            router.push("/dashboard");
-          }
-        },
-        theme: { color: "#C1272D" },
-      });
-
-      rzp.open();
-    } catch (err: any) {
-      setMessage(err.message || "Payment error");
-    } finally {
-      setCheckoutLoading(false);
-      setSelectedPlan("");
-    }
-  }
+  if (loading) return null;
 
   return (
     <main className="min-h-screen bg-[#0D0D0D] text-white">
-      <div className="bg-[#C1272D] text-center py-2 font-medium">
-        Join waitlist to get 20% discount lifetime
-      </div>
 
-      <section className="text-center py-10 px-6 space-y-6 max-w-5xl mx-auto">
-        <FoxgenLogo size={120} />
+      {/* Hero Section */}
+      <section className="text-center py-24 px-6 space-y-8 max-w-4xl mx-auto">
 
-        <h1 className="text-4xl font-extrabold">
-          Foxgen Launch: Join the Waitlist
+        <div className="mb-4">
+          <FoxgenLogo size={140} />
+        </div>
+
+        <h1 className="text-5xl font-extrabold leading-tight">
+          Stop Creating Content Manually.<br />Let AI Do It for You.
+          Stop Creating Content Manually.<br />
+          Let AI Do It for You.
         </h1>
 
-        <p className="text-gray-300">
-          Early users get special launch discounts (valid till Dec 31st).
+        <p className="text-gray-300 text-lg leading-relaxed max-w-2xl mx-auto">
+          Foxgen automates 100% of your content creation — from idea to image, video,
+          voice, and final output. Just enter an idea. Foxgen handles the rest.
         </p>
 
-        {/* =========================
-           DISCOUNT BOX
-        ========================= */}
-        <div className="max-w-md mx-auto border border-gray-700 rounded-lg p-4 bg-[#121212]">
-          <p className="text-sm text-gray-300 mb-2">
-            Have a discount code?
-          </p>
+        <button
+          onClick={handleStartCreating}
+          className="inline-block mt-6 px-10 py-3 bg-[#C1272D] hover:bg-[#A02025]
+                    rounded-xl text-lg font-semibold transition"
+        >
+          Start Creating
+        </button>
+    </section>
 
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter Discount Code"
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-            />
-            <Button onClick={applyDiscount}>Apply</Button>
-          </div>
+    {/* Sample Images Section */ }
+    <section className="max-w-6xl mx-auto px-6 py-16">
+      <h2 className="text-3xl font-bold mb-6 text-center">AI Image Samples</h2>
 
-          {appliedDiscount > 0 && (
-            <p className="text-green-400 text-sm mt-2">
-              🎉 Discount applied
-            </p>
-          )}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <img src="/demo/car.png" className="rounded-xl" alt="Sample 1" />
+        <img src="/demo/cat.png" className="rounded-xl" alt="Sample 2" />
+        <img src="/demo/dance.png" className="rounded-xl" alt="Sample 3" />
+        <img src="/demo/run.png" className="rounded-xl" alt="Sample 4" />
+        <img src="/demo/dog.png" className="rounded-xl" alt="Sample 5" />
+        <img src="/demo/man.png" className="rounded-xl" alt="Sample 6" />
+      </div>
 
-          {discountError && (
-            <p className="text-red-400 text-sm mt-2">
-              {discountError}
-            </p>
-          )}
-        </div>
-
-        {/* =========================
-           PRICING (REGION BASED)
-        ========================= */}
-        {!pricingLoading && pricing && (
-          <PricingSection
-            pricing={pricing!}
-            loadingPlanId={selectedPlan}
-            onSelectPlanAction={(planId) => {
-              router.push(`/payment?plan=${planId}`);
-            }}
-          />
-        )}
-
-        {/* =========================
-           WAITLIST FORM
-        ========================= */}
-        <div className="rounded-xl border border-gray-800 p-6 text-left bg-[#121212] max-w-lg mx-auto mt-12">
-          <form onSubmit={joinWaitlist} className="space-y-4">
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label>WhatsApp (optional)</Label>
-              <Input
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Role (optional)</Label>
-              <select
-                className="w-full bg-transparent border border-gray-700 rounded-md p-2"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="">Select</option>
-                <option value="creator">Creator</option>
-                <option value="editor">Editor</option>
-                <option value="agency">Agency</option>
-              </select>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="
-                mt-6 w-full
-                bg-red-600 text-white
-                hover:bg-red-700
-                active:bg-red-800
-                disabled:bg-red-600/40
-                disabled:cursor-not-allowed
-                font-semibold
-                py-3
-                rounded-md
-                transition
-                focus:ring-2
-                focus:ring-red-500
-                focus:ring-offset-2
-                focus:ring-offset-[#121212]
-              "
-            >
-              {isSubmitting ? "Joining..." : "Join Waitlist"}
-            </Button>
-          </form>
-
-          {message && (
-            <p className="mt-4 text-sm text-gray-300">{message}</p>
-          )}
-        </div>
-
-        <p className="text-gray-400 mt-10">
-          Live waitlist: {count} users
-        </p>
-      </section>
-    </main>
+      <div className="text-center mt-8">
+        <button
+          onClick={handleStartCreating}
+          className="px-8 py-3 bg-[#C1272D] rounded-lg hover:bg-[#A02025] text-lg font-medium"
+        >
+          Generate Your Own
+        </button>
+      </div>
+    </section>
+  </main>
   );
 }
