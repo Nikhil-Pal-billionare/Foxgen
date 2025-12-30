@@ -23,7 +23,11 @@ export async function POST(req: Request) {
     };
 
     // normalize and type-guard planId so TypeScript knows it's one of the known keys
-    const planId = typeof rawPlanId === "string" ? (rawPlanId as keyof typeof PLAN_NAMES) : undefined;
+    type PlanId = keyof typeof PLAN_NAMES;
+    const planId: PlanId | undefined =
+      typeof rawPlanId === "string" && rawPlanId in PLAN_NAMES
+        ? (rawPlanId as PlanId)
+        : undefined;
 
     if (!email || typeof email !== "string") {
       return NextResponse.json(
@@ -50,21 +54,36 @@ export async function POST(req: Request) {
     const currency = regionPricing.currency;
 
     /* =========================
-       BASE PRICE
-    ========================= */
-    const baseAmount = regionPricing.plans[planId as keyof typeof regionPricing.plans];
+           BASE PRICE
+        ========================= */
+        const planEntry = planId
+          ? regionPricing.plans[planId as keyof typeof regionPricing.plans]
+          : undefined;
+    
+        if (!planEntry) {
+          return NextResponse.json(
+            { error: "Plan pricing not found" },
+            { status: 400 }
+          );
+        }
+    
+        const baseAmount = planEntry.discounted;
 
-    if (!baseAmount) {
-      return NextResponse.json(
-        { error: "Plan pricing not found" },
-        { status: 400 }
-      );
-    }
-
-    /* =========================
+/* =========================
        DISCOUNT (BACKEND ONLY)
     ========================= */
-    let finalAmount = baseAmount;
+    const planPricing = planEntry;
+
+if (!planPricing) {
+  return NextResponse.json(
+    { error: "Plan pricing not found" },
+    { status: 400 }
+  );
+}
+
+// ✅ DEFAULT = launch discounted price
+let finalAmount: number = planPricing.discounted;
+
 
     if (discountCode === "AVT100") {
       // Flat discount per region

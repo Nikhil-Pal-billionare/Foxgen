@@ -8,7 +8,13 @@ import FoxgenLogo from "@/components/branding/FoxgenLogo";
 type Pricing = {
   currency: string;
   symbol: string;
-  plans: Record<string, number>;
+  plans: Record<
+    string,
+    {
+      original: number;
+      discounted: number;
+    }
+  >;
 };
 
 export default function PaymentPage() {
@@ -39,6 +45,10 @@ export default function PaymentPage() {
       </div>
     );
   }
+
+  const planPricing = pricing?.plans?.[planId];
+  const finalPrice = planPricing?.discounted;
+  const symbol = pricing?.symbol;
 
   /* =========================
      PAY
@@ -105,17 +115,27 @@ export default function PaymentPage() {
           </p>
         </div>
 
-        {pricing && (
-          <div className="bg-[#1A1A1A] rounded-lg p-4 text-center">
-            <p className="text-sm text-gray-400">Selected Plan</p>
-            <p className="text-xl font-bold capitalize">{planId}</p>
-            <p className="text-2xl font-extrabold text-[#C1272D] mt-2">
-              {pricing.symbol}
-              {pricing.plans[planId]}
-              <span className="text-sm text-gray-400 font-normal"> /mo</span>
-            </p>
-          </div>
-        )}
+        {pricing && pricing.plans[planId] && (
+  <div className="bg-[#1A1A1A] rounded-lg p-4 text-center">
+    <p className="text-sm text-gray-400">Selected Plan</p>
+
+    <p className="text-xl font-bold capitalize">
+      {planId}
+    </p>
+
+    <p className="text-sm text-gray-500 line-through">
+      {pricing.symbol}
+      {pricing.plans[planId].original}
+    </p>
+
+    <p className="text-2xl font-extrabold text-[#C1272D] mt-1">
+      {pricing.symbol}
+      {pricing.plans[planId].discounted}
+      <span className="text-sm text-gray-400 font-normal"> /mo</span>
+    </p>
+  </div>
+)}
+
 
         <div>
           <label className="block text-sm mb-1">Email</label>
