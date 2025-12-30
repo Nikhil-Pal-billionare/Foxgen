@@ -51,6 +51,9 @@ export const PRICING = {
         original: 44,
         discounted: 39,
       },
+      starter: 16,
+      pro: 34,
+      elite: 44,
     },
   },
 } as const;
