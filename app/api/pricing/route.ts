@@ -12,30 +12,34 @@ export async function GET() {
       ? { type: "flat" as const, value: 100 }
       : { type: "flat" as const, value: 5 };
 
+  function getOriginal(plan: any): number {
+    return typeof plan === "number" ? plan : plan.original;
+  }
+
   return NextResponse.json({
     currency: region.currency,
     symbol: region.symbol,
     plans: {
       starter: {
-        original: region.plans.starter.original,
+        original: getOriginal(region.plans.starter),
         discounted: applyDiscount(
-          region.plans.starter.original,
+          getOriginal(region.plans.starter),
           discount.type,
           discount.value
         ),
       },
       pro: {
-        original: region.plans.pro.original,
+        original: getOriginal(region.plans.pro),
         discounted: applyDiscount(
-          region.plans.pro.original,
+          getOriginal(region.plans.pro),
           discount.type,
           discount.value
         ),
       },
       elite: {
-        original: region.plans.elite.original,
+        original: getOriginal(region.plans.elite),
         discounted: applyDiscount(
-          region.plans.elite.original,
+          getOriginal(region.plans.elite),
           discount.type,
           discount.value
         ),
