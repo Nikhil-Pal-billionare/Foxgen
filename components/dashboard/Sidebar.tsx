@@ -17,7 +17,7 @@ export default function Sidebar({
 }) {
   return (
     <aside className="w-64 bg-[#0b0f19] border-r border-white/10 p-4">
-      
+
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8 px-2">
         <Image
@@ -60,6 +60,13 @@ export default function Sidebar({
           icon={CreditCard}
           label="Credits"
           href="/dashboard/credits"
+        />
+
+        {/* 🔥 NEW PLANS OPTION */}
+        <SidebarItem
+          icon={CreditCard}
+          label="Plans"
+          href="/dashboard/plans"
         />
 
         <SidebarItem
