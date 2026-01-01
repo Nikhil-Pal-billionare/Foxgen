@@ -13,18 +13,4 @@ export async function GET() {
   const pricing = isIndia ? PRICING.INR : PRICING.USD;
 
   return NextResponse.json(pricing);
-
-  const country =
-    h.get("cf-ipcountry") ||
-    h.get("x-vercel-ip-country") ||
-    (process.env.NODE_ENV === "development" ? "IN" : "US");
-
-  const region = country === "IN" ? PRICING.INR : PRICING.USD;
-
-  return NextResponse.json({
-    country,
-    currency: region.currency,
-    symbol: region.symbol,
-    plans: region.plans,
-  });
 }
