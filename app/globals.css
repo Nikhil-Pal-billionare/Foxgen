@@ -2,14 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================
+   THEME VARIABLES
+================================ */
 :root {
   --bg: #0b0f19;
   --card: #111827;
-  --border: rgba(255,255,255,0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #c1272d;
 }
 
+/* ================================
+   GLOBAL BASE STYLES
+================================ */
 html,
 body {
   background: var(--bg);
   color: #e5e7eb;
+}
+
+/* ================================
+   GLOBAL TRANSITIONS (EVERYWHERE)
+================================ */
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow, filter;
+  transition-duration: 200ms;
+  transition-timing-function: ease-out;
+}
+
+/* ================================
+   CARD / SECTION ZOOM
+================================ */
+.hover-zoom {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-zoom:hover {
+  transform: scale(1.03);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+}
+
+.hover-zoom:active {
+  transform: scale(0.97);
+}
+
+/* ================================
+   DASHBOARD LIFT EFFECT
+================================ */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ================================
+   IMAGE / THUMBNAIL ZOOM
+================================ */
+.hover-image {
+  overflow: hidden;
+}
+
+.hover-image img {
+  transition: transform 0.3s ease;
+}
+
+.hover-image:hover img {
+  transform: scale(1.08);
+}
+
+/* ================================
+   PRIMARY BUTTON (RED)
+================================ */
+.btn-primary {
+  background-color: var(--accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 28px rgba(193, 39, 45, 0.55);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+/* ================================
+   SECONDARY BUTTON
+================================ */
+.btn-secondary {
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  transform: scale(1.02);
+}
+
+/* ================================
+   INPUT / TEXTAREA FOCUS
+================================ */
+input,
+textarea,
+select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(193, 39, 45, 0.4);
+  outline: none;
+}
+
+/* ================================
+   PAGE FADE-IN
+================================ */
+.page-enter {
+  animation: pageFade 0.35s ease-out forwards;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
