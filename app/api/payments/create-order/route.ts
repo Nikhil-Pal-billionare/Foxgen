@@ -1,32 +1,56 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Razorpay from "razorpay";
-import { PRICING } from "@/lib/pricing";
-import { applyDiscount } from "@/lib/pricing";
+import { PRICING, applyDiscount, PlanId } from "@/lib/pricing";
+import { createClient } from "@/lib/supabaseServer";
 
 /* =========================
-   PLAN NAME MAP
+   PLAN NAMES (TYPE SAFE)
 ========================= */
-const PLAN_NAMES = {
+const PLAN_NAMES: Record<PlanId, string> = {
   starter: "Starter Plan",
   pro: "Pro Plan",
   elite: "Elite Plan",
-} as const;
-
-type PlanId = keyof typeof PLAN_NAMES;
+};
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const { email, planId: rawPlanId, discountCode } = body as {
-      email?: unknown;
-      planId?: unknown;
-      discountCode?: unknown;
-    };
+    const supabase = createClient();
 
     /* =========================
-       VALIDATION
+       AUTH
     ========================= */
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    /* =========================
+       PARSE BODY (UNKNOWN → SAFE)
+    ========================= */
+    const body: unknown = await req.json();
+
+    if (
+      typeof body !== "object" ||
+      body === null ||
+      !("email" in body) ||
+      !("planId" in body)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { email, planId, discountCode } = body as {
+      email: string;
+      planId: string;
+      discountCode?: string;
+    };
+
     if (!email || typeof email !== "string") {
       return NextResponse.json(
         { error: "Email is required" },
@@ -34,101 +58,115 @@ export async function POST(req: Request) {
       );
     }
 
-    const planId =
-      typeof rawPlanId === "string" && rawPlanId in PLAN_NAMES
-        ? (rawPlanId as PlanId)
-        : null;
-
-    if (!planId) {
+    /* =========================
+       PLAN VALIDATION (KEY FIX)
+    ========================= */
+    if (!["starter", "pro", "elite"].includes(planId)) {
       return NextResponse.json(
         { error: "Invalid plan selected" },
         { status: 400 }
       );
     }
 
+    // 🔥 NOW planId IS SAFE
+    const safePlanId = planId as PlanId;
+
     /* =========================
-       REGION DETECTION
+       REGION
     ========================= */
     const h = headers();
-
     const country =
       h.get("cf-ipcountry") ||
       h.get("x-vercel-ip-country") ||
-      "US"; // unknown → USD
+      "US";
 
-    const isIndia = country === "IN";
+    const regionPricing =
+      country === "IN" ? PRICING.INR : PRICING.USD;
+
+    const currency = regionPricing.currency;
 
     /* =========================
-       PRICING SELECTION
+       BASE PRICE
     ========================= */
-    const regionPricing = isIndia ? PRICING.INR : PRICING.USD;
-    const currency = isIndia ? "INR" : "USD";
+    const basePrice =
+      regionPricing.plans[safePlanId].discounted;
 
-    const planEntry = regionPricing.plans[planId];
+    let finalAmount = basePrice;
 
-    if (!planEntry) {
-      return NextResponse.json(
-        { error: "Plan pricing not found" },
-        { status: 400 }
-      );
+    /* =========================
+       PROMOS
+    ========================= */
+
+    // 🆓 100% OFF
+    if (discountCode === "YDTA100") {
+      finalAmount = 0;
     }
-
-    /* =========================
-       BASE AMOUNT
-    ========================= */
-    let finalAmount: number = planEntry.discounted;
-
-    /* =========================
-       DISCOUNT (OPTIONAL)
-    ========================= */
+    if (discountCode === "PRCH100A") {
+      finalAmount = 0;
+    }
+    // 💸 PARTIAL DISCOUNT
     if (discountCode === "AVT100") {
-      finalAmount = isIndia
-        ? applyDiscount(finalAmount, "flat", 100)
-        : applyDiscount(finalAmount, "flat", 5);
+      finalAmount =
+        currency === "INR"
+          ? applyDiscount(basePrice, "flat", 100)
+          : applyDiscount(basePrice, "flat", 5);
     }
 
     /* =========================
-       RAZORPAY INIT
+       FREE FLOW (NO RAZORPAY)
     ========================= */
-    const key_id = process.env.RAZORPAY_KEY_ID;
-    const key_secret = process.env.RAZORPAY_KEY_SECRET;
+    if (finalAmount === 0) {
+      await supabase.from("subscriptions").insert({
+        user_id: user.id,
+        plan_id: safePlanId,
+        status: "active",
+        source: "promo",
+        promo_code: discountCode ?? null,
+      });
 
-    if (!key_id || !key_secret) {
-      return NextResponse.json(
-        { error: "Razorpay keys not configured" },
-        { status: 500 }
-      );
+      await supabase.from("payments").insert({
+        user_id: user.id,
+        amount: 0,
+        currency,
+        provider: "promo",
+        status: "success",
+      });
+
+      return NextResponse.json({ free: true });
     }
 
-    const rp = new Razorpay({ key_id, key_secret });
-
     /* =========================
-       CREATE ORDER
-       (smallest currency unit)
+       RAZORPAY
     ========================= */
+    const rp = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+
     const order = await rp.orders.create({
-      amount: Math.round(finalAmount * 100), // paise / cents
-      currency, // INR or USD
-      receipt: `foxgen-${planId}-${Date.now()}`,
+      amount: Math.round(finalAmount * 100),
+      currency,
+      receipt: `foxgen-${safePlanId}-${Date.now()}`,
       notes: {
         email,
-        planId,
-        planName: PLAN_NAMES[planId],
-        country,
-        currency,
+        planId: safePlanId,
+        planName: PLAN_NAMES[safePlanId],
+        promo: discountCode ?? "none",
       },
     });
 
     return NextResponse.json({
+      free: false,
       order,
-      key_id,
+      key_id: process.env.RAZORPAY_KEY_ID,
       currency,
-      planName: PLAN_NAMES[planId],
+      planName: PLAN_NAMES[safePlanId],
+      finalAmount,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("CREATE ORDER ERROR:", err);
     return NextResponse.json(
-      { error: err?.message ?? "Failed to create order" },
+      { error: "Failed to create order" },
       { status: 500 }
     );
   }

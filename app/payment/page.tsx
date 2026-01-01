@@ -2,166 +2,193 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
 
 type Pricing = {
   currency: string;
   symbol: string;
   plans: Record<
-    string,
-    {
-      original: number;
-      discounted: number;
-    }
+    "starter" | "pro" | "elite",
+    { original: number; discounted: number }
   >;
 };
 
 export default function PaymentPage() {
   const router = useRouter();
   const params = useSearchParams();
+  const planId = params.get("plan") as "starter" | "pro" | "elite";
 
-  const planId = params.get("plan"); // starter | pro | elite
+  const [pricing, setPricing] = useState<Pricing | null>(null);
+  const [basePrice, setBasePrice] = useState(0);
+  const [finalPrice, setFinalPrice] = useState(0);
 
   const [email, setEmail] = useState("");
-  const [pricing, setPricing] = useState<Pricing | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* =========================
-     LOAD PRICING
-  ========================= */
   useEffect(() => {
     fetch("/api/pricing")
       .then((r) => r.json())
-      .then(setPricing)
-      .catch(() => setError("Failed to load pricing"));
-  }, []);
+      .then((data) => {
+        const price = data.plans[planId].discounted;
+        setPricing(data);
+        setBasePrice(price);
+        setFinalPrice(price);
+      });
+  }, [planId]);
 
-  if (!planId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        Invalid plan selected
-      </div>
-    );
-  }
+  function applyPromo() {
+    if (!pricing) return;
 
-  const planPricing = pricing?.plans?.[planId];
-  const finalPrice = planPricing?.discounted;
-  const symbol = pricing?.symbol;
+    const code = promoCode.trim().toUpperCase();
 
-  /* =========================
-     PAY
-  ========================= */
-  async function handlePayment() {
-    if (!email) {
-      setError("Please enter your email");
+    if (code === "YDTA100") {
+      setAppliedPromo(code);
+      setFinalPrice(0);
+      setError("");
+      return;
+    }
+    if (code === "PRCH100A") {
+      setAppliedPromo(code);
+      setFinalPrice(0);
+      setError("");
+      return;
+    }
+    if (code === "AVT100") {
+      const discounted =
+        pricing.currency === "INR"
+          ? Math.max(basePrice - 100, 0)
+          : Math.max(basePrice - 5, 0);
+
+      setAppliedPromo(code);
+      setFinalPrice(discounted);
+      setError("");
       return;
     }
 
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/payments/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, planId }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Payment failed");
-
-      const { order, key_id, planName } = data;
-
-      await new Promise((resolve, reject) => {
-        if ((window as any).Razorpay) return resolve(true);
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => reject();
-        document.body.appendChild(script);
-      });
-
-      // @ts-ignore
-      const rzp = new window.Razorpay({
-        key: key_id,
-        order_id: order.id,
-        name: `Foxgen – ${planName}`,
-        description: "Early access subscription",
-        prefill: { email },
-        handler: async () => {
-          router.push("/dashboard");
-        },
-        theme: { color: "#C1272D" },
-      });
-
-      rzp.open();
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    setAppliedPromo(null);
+    setFinalPrice(basePrice);
+    setError("Invalid promotion code");
   }
 
+  async function handlePayment() {
+    if (!email) return setError("Email required");
+
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/payments/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        planId,
+        discountCode: appliedPromo,
+      }),
+    });
+
+    const data = await res.json();
+
+    /* 🆓 FREE */
+    if (data.free) {
+      router.push("/dashboard");
+      return;
+    }
+
+    if (!res.ok) {
+      setError(data.error);
+      setLoading(false);
+      return;
+    }
+
+    await new Promise((resolve) => {
+      if ((window as any).Razorpay) return resolve(true);
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = resolve;
+      document.body.appendChild(s);
+    });
+
+    const rzp = new (window as any).Razorpay({
+      key: data.key_id,
+      order_id: data.order.id,
+      name: `Foxgen – ${data.planName}`,
+      prefill: { email },
+      handler: () => router.push("/dashboard"),
+      theme: { color: "#C1272D" },
+    });
+
+    rzp.open();
+    setLoading(false);
+  }
+
+  if (!pricing) return null;
+
   return (
-    <main className="min-h-screen bg-[#0D0D0D] text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-[#121212] border border-gray-800 rounded-xl p-8 space-y-6">
+    <main className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="w-full max-w-md bg-[#121212] border border-gray-800 rounded-xl p-8 space-y-6 text-white">
         <div className="text-center">
           <FoxgenLogo size={80} />
           <h1 className="text-2xl font-bold mt-4">Complete Payment</h1>
-          <p className="text-gray-400 text-sm">
-            Secure checkout for early access
+        </div>
+
+        <div className="bg-[#1A1A1A] p-4 rounded text-center">
+          <p className="text-sm text-gray-400">Selected Plan</p>
+          <p className="text-xl font-bold capitalize">{planId}</p>
+          <p className="text-2xl font-extrabold text-[#C1272D] mt-2">
+            {pricing.symbol}
+            {finalPrice}
+            <span className="text-sm text-gray-400"> /mo</span>
           </p>
         </div>
 
-        {pricing && pricing.plans[planId] && (
-  <div className="bg-[#1A1A1A] rounded-lg p-4 text-center">
-    <p className="text-sm text-gray-400">Selected Plan</p>
-
-    <p className="text-xl font-bold capitalize">
-      {planId}
-    </p>
-
-    <p className="text-sm text-gray-500 line-through">
-      {pricing.symbol}
-      {pricing.plans[planId].original}
-    </p>
-
-    <p className="text-2xl font-extrabold text-[#C1272D] mt-1">
-      {pricing.symbol}
-      {pricing.plans[planId].discounted}
-      <span className="text-sm text-gray-400 font-normal"> /mo</span>
-    </p>
-  </div>
-)}
-
-
         <div>
-          <label className="block text-sm mb-1">Email</label>
-          <input
-            className="w-full rounded-md bg-black border border-gray-700 px-3 py-2 outline-none"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <label className="text-sm text-gray-400">Add promotion code</label>
+          <div className="flex gap-2 mt-1">
+            <input
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              className="flex-1 bg-black border border-gray-700 rounded px-3 py-2"
+            />
+            <button
+              onClick={applyPromo}
+              className="px-4 border border-gray-600 rounded hover:bg-gray-800"
+            >
+              Apply
+            </button>
+          </div>
+
+          {appliedPromo && (
+            <p className="text-green-400 text-sm mt-1">
+              🎉 {appliedPromo === "YDTA100"
+                ? "100% discount applied"
+                : "Discount applied"},
+                {appliedPromo === "PRCH100A"
+                ? "100% discount applied"
+                : "Discount applied"}
+            </p>
+          )}
         </div>
 
-        {error && (
-          <p className="text-sm text-red-500 text-center">{error}</p>
-        )}
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="w-full bg-black border border-gray-700 rounded px-3 py-2"
+        />
 
-        <Button
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        <button
           onClick={handlePayment}
           disabled={loading}
-          className="
-            w-full bg-red-600 hover:bg-red-700
-            disabled:bg-red-600/40
-            font-semibold py-3 rounded-md
-          "
+          className="w-full bg-red-600 py-3 rounded font-semibold"
         >
           {loading ? "Processing..." : "Pay Now"}
-        </Button>
+        </button>
 
         <p className="text-xs text-gray-400 text-center">
           Payments are securely processed by Razorpay
