@@ -42,7 +42,15 @@ export default function ProductsPage() {
           onGenerate={() => router.push("/dashboard/image-generator")}
         />
 
-        {/* Image to Video (WITH RESOLUTION) */}
+        {/* 🆕 AI CUT EDITOR */}
+        <ProductCard
+          title="AI Cut Editor"
+          desc="Convert video/audio to text and detect cuts automatically"
+          cost="3 credits / minute"
+          onGenerate={() => router.push("/dashboard/cut-editor")}
+        />
+
+        {/* Image to Video */}
         <ProductCard
           title="Image to Video"
           desc="Turn images into AI videos"
@@ -64,7 +72,7 @@ export default function ProductsPage() {
           onGenerate={() => router.push("/dashboard/thumbnail")}
         />
 
-        {/* AI Ads (WITH RESOLUTION) */}
+        {/* AI Ads */}
         <ProductCard
           title="AI Ads Generator"
           desc="Generate AI-powered video ads"
@@ -99,7 +107,7 @@ function ProductCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl bg-white/5 border border-white/10 p-6 space-y-4">
+    <div className="rounded-3xl bg-white/5 border border-white/10 p-6 space-y-4 hover:scale-[1.02] transition">
       <div>
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="text-sm text-gray-400">{desc}</p>
@@ -107,9 +115,7 @@ function ProductCard({
 
       <p className="text-sm text-gray-400">Cost: {cost}</p>
 
-      {children ?? (
-        <GenerateButton onClick={onGenerate!} />
-      )}
+      {children ?? <GenerateButton onClick={onGenerate!} />}
     </div>
   );
 }
