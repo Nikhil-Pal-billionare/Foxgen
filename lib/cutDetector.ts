@@ -1,51 +1,78 @@
-type CutReason = "silence" | "repetition" | "filler";
+type Word = {
+  text: string;
+  start: number; // ms
+  end: number;   // ms
+};
 
-export type CutSuggestion = {
+type Cut = {
   start: number;
   end: number;
-  reason: CutReason;
+  reason: string;
   confidence: number;
 };
 
-const FILLERS = ["uh", "um", "like", "you know", "basically"];
+const FILLERS = ["um", "uh", "ah", "like", "you know", "so"];
 
-export function detectCuts(words: any[]): CutSuggestion[] {
-  const cuts: CutSuggestion[] = [];
+export function detectCuts(words: Word[]): Cut[] {
+  const cuts: Cut[] = [];
 
+  if (!words || words.length === 0) return cuts;
+
+  /* =========================
+     1️⃣ LONG PAUSES (> 700ms)
+     (REALISTIC)
+  ========================= */
   for (let i = 1; i < words.length; i++) {
-    const prev = words[i - 1];
-    const curr = words[i];
+    const gap = words[i].start - words[i - 1].end;
 
-    // 🔴 Silence
-    if (curr.start - prev.end > 1200) {
+    if (gap > 5000) {
       cuts.push({
-        start: prev.end,
-        end: curr.start,
-        reason: "silence",
-        confidence: 0.9,
+        start: words[i - 1].end,
+        end: words[i].start,
+        reason: "Long pause",
+        confidence: Math.min(gap / 2000, 1),
       });
     }
+  }
 
-    // 🟡 Fillers
-    if (FILLERS.includes(curr.text.toLowerCase())) {
-      cuts.push({
-        start: curr.start,
-        end: curr.end,
-        reason: "filler",
-        confidence: 0.7,
-      });
+  /* =========================
+     2️⃣ FILLER CLUSTERS
+     (≥ 2 fillers in 3s)
+  ========================= */
+  let fillerStart: number | null = null;
+  let fillerCount = 0;
+
+  for (const w of words) {
+    if (FILLERS.includes(w.text.toLowerCase())) {
+      if (fillerStart === null) fillerStart = w.start;
+      fillerCount++;
+    } else {
+      if (fillerCount >= 2 && fillerStart !== null) {
+        cuts.push({
+          start: fillerStart,
+          end: w.end,
+          reason: "Filler-heavy speech",
+          confidence: Math.min(fillerCount / 4, 1),
+        });
+      }
+      fillerStart = null;
+      fillerCount = 0;
     }
+  }
 
-    // 🟠 Repetition
+  /* =========================
+     3️⃣ REPETITION (same word)
+  ========================= */
+  for (let i = 1; i < words.length; i++) {
     if (
-      curr.text.toLowerCase() === prev.text.toLowerCase() &&
-      curr.start - prev.start < 2000
+      words[i].text.toLowerCase() ===
+      words[i - 1].text.toLowerCase()
     ) {
       cuts.push({
-        start: prev.start,
-        end: curr.end,
-        reason: "repetition",
-        confidence: 0.85,
+        start: words[i - 1].start,
+        end: words[i].end,
+        reason: "Repeated word",
+        confidence: 0.7,
       });
     }
   }

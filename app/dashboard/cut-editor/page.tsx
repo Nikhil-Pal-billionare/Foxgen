@@ -18,154 +18,106 @@ export default function CutEditorPage() {
 
   async function runAnalysis() {
     if (!file) {
-      setError("Please upload an audio or video file");
+      setError("Please upload a file");
       return;
     }
 
     setLoading(true);
-    setError("");
     setCuts([]);
     setTranscriptText("");
+    setError("");
 
     try {
-      /* =========================
-         1️⃣ UPLOAD TO SUPABASE
-      ========================= */
+      /* 1️⃣ Upload */
       const fd = new FormData();
       fd.append("file", file);
 
-      const uploadRes = await fetch("/api/media/upload", {
+      const upload = await fetch("/api/media/upload", {
         method: "POST",
         body: fd,
-      });
+      }).then((r) => r.json());
 
-      const upload = await uploadRes.json();
-      if (!uploadRes.ok) {
-        throw new Error(upload.error || "Upload failed");
-      }
-
-      /* =========================
-         2️⃣ TRANSCRIBE (ASSEMBLY AI)
-      ========================= */
-      const transcriptRes = await fetch("/api/transcribe", {
+      /* 2️⃣ Transcribe */
+      const transcript = await fetch("/api/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audioUrl: upload.signedUrl,
-        }),
-      });
+        body: JSON.stringify({ audioUrl: upload.signedUrl }),
+      }).then((r) => r.json());
 
-      const transcript = await transcriptRes.json();
-      if (!transcriptRes.ok) {
-        throw new Error(transcript.error || "Transcription failed");
-      }
+      setTranscriptText(transcript.text);
 
-      /* =========================
-         ✅ BUILD TRANSCRIPT TEXT
-         (AssemblyAI-safe)
-      ========================= */
-      if (transcript.text) {
-        setTranscriptText(transcript.text);
-      } else if (Array.isArray(transcript.words)) {
-        const fullText = transcript.words
-          .map((w: any) => w.text)
-          .join(" ");
-        setTranscriptText(fullText);
-      }
-
-      /* =========================
-         3️⃣ ANALYZE CUTS
-      ========================= */
-      const analysisRes = await fetch("/api/analyze", {
+      /* 3️⃣ Analyze */
+      const analysis = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           words: transcript.words,
           durationSeconds: transcript.audio_duration,
         }),
-      });
-
-      const analysis = await analysisRes.json();
-      if (!analysisRes.ok) {
-        throw new Error(analysis.error || "Analysis failed");
-      }
+      }).then((r) => r.json());
 
       setCuts(analysis.cuts);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Something went wrong");
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">AI Cut Editor</h1>
 
       <input
         type="file"
         accept="audio/*,video/*"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="block"
       />
-
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
 
       <button
         onClick={runAnalysis}
         disabled={loading}
-        className="
-          px-6 py-2 rounded
-          bg-red-600 hover:bg-red-700
-          disabled:opacity-50
-          transition
-        "
+        className="bg-red-600 px-6 py-2 rounded"
       >
         {loading ? "Analyzing..." : "Analyze Media"}
       </button>
 
-      {/* =========================
-          TRANSCRIBED TEXT
-      ========================= */}
+      {/* TRANSCRIPT */}
       {transcriptText && (
-        <div className="border border-[var(--border)] p-4 rounded space-y-2">
-          <h2 className="font-semibold">Transcribed Text</h2>
-          <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+        <div className="border border-white/10 p-4 rounded">
+          <h2 className="font-semibold mb-2">Transcribed Text</h2>
+          <p className="text-sm text-gray-300 whitespace-pre-wrap">
             {transcriptText}
           </p>
         </div>
       )}
 
-      {/* =========================
-          CUT SUGGESTIONS
-      ========================= */}
+      {/* CUTS */}
       {cuts.length > 0 && (
-        <div className="space-y-2 mt-6">
+        <div className="space-y-3">
           <h2 className="font-semibold">Suggested Cuts</h2>
 
           {cuts.map((c, i) => (
             <div
               key={i}
-              className="
-                hover-lift
-                border border-[var(--border)]
-                p-4 rounded
-                transition
-              "
+              className="border border-white/10 p-4 rounded hover:bg-white/5"
             >
-              <p>
+              <p className="font-medium">
                 ⏱ {Math.round(c.start / 1000)}s →{" "}
                 {Math.round(c.end / 1000)}s
               </p>
               <p className="text-sm text-gray-400">
-                Reason: {c.reason} ({Math.round(c.confidence * 100)}%)
+                {c.reason} · {Math.round(c.confidence * 100)}%
               </p>
             </div>
           ))}
         </div>
+      )}
+
+      {cuts.length === 0 && transcriptText && (
+        <p className="text-sm text-gray-400">
+          No strong cut points detected (clean speech).
+        </p>
       )}
     </div>
   );

@@ -16,24 +16,28 @@ export async function POST(req: Request) {
 
   const { words, durationSeconds } = await req.json();
 
+  if (!Array.isArray(words) || !durationSeconds) {
+    return NextResponse.json(
+      { error: "Invalid input for cut analysis" },
+      { status: 400 }
+    );
+  }
+
   /* =========================
-     CREDIT CALCULATION
+     CREDIT DEDUCTION
   ========================= */
-  const minutes = Math.ceil(durationSeconds / 60);
+  const minutes = Math.max(1, Math.ceil(durationSeconds / 60));
   const creditsToDeduct = minutes * CREDIT_COSTS.AI_CUT_PER_MINUTE;
 
   const { error } = await supabase.rpc("deduct_credits", {
     p_user_id: user.id,
     p_amount: creditsToDeduct,
     p_reason: "ai_cut_editor",
-    p_meta: { minutes, creditsToDeduct },
+    p_meta: { minutes },
   });
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   /* =========================
