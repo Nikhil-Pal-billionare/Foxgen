@@ -2,6 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { 
+  Sparkles, 
+  Mic, 
+  Image as ImageIcon, 
+  Scissors, 
+  Film, 
+  ImagePlus, 
+  Video, 
+  Zap,
+  ArrowRight
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -13,77 +25,105 @@ export default function ProductsPage() {
   const adsCost = adsRes === "480p" ? 52 : 115;
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Our Products</h1>
+    <div className="space-y-10 pb-20">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Our Creative Suite</h1>
+        <p className="text-gray-400">Powerful AI tools to supercharge your content creation</p>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {/* Script Generator */}
         <ProductCard
           title="Script Generator"
-          desc="Generate creative AI scripts"
+          desc="Generate creative AI scripts for your videos, ads, and more."
           cost="10 credits"
+          icon={Sparkles}
+          color="text-yellow-400"
+          bg="bg-yellow-400/10"
           onGenerate={() => router.push("/dashboard/script-generator")}
         />
 
         {/* Voiceover */}
         <ProductCard
           title="Voiceover Generator"
-          desc="Convert text into realistic voice"
+          desc="Convert text into realistic, human-like voiceovers in seconds."
           cost="16 credits / minute"
+          icon={Mic}
+          color="text-blue-400"
+          bg="bg-blue-400/10"
           onGenerate={() => router.push("/dashboard/voiceover-generator")}
         />
 
         {/* Image Generator */}
         <ProductCard
           title="Image Generator"
-          desc="Create high-quality AI images"
+          desc="Create stunning high-quality AI images from simple text prompts."
           cost="20 credits"
+          icon={ImageIcon}
+          color="text-purple-400"
+          bg="bg-purple-400/10"
           onGenerate={() => router.push("/dashboard/image-generator")}
         />
 
         {/* 🆕 AI CUT EDITOR */}
         <ProductCard
           title="AI Cut Editor"
-          desc="Convert video/audio to text and detect cuts automatically"
+          desc="Smartly detect silences and cuts in your video/audio to speed up editing."
           cost="3 credits / minute"
+          icon={Scissors}
+          color="text-pink-400"
+          bg="bg-pink-400/10"
           onGenerate={() => router.push("/dashboard/cut-editor")}
         />
 
         {/* Image to Video */}
         <ProductCard
           title="Image to Video"
-          desc="Turn images into AI videos"
+          desc="Turn static images into engaging AI-generated video clips."
           cost={`${videoCost} credits`}
+          icon={Film}
+          color="text-green-400"
+          bg="bg-green-400/10"
         >
-          <ResolutionSelect value={videoRes} onChange={setVideoRes} />
-          <GenerateButton
-            onClick={() =>
-              router.push(`/dashboard/video-generator?res=${videoRes}`)
-            }
-          />
+          <div className="flex items-center gap-3 w-full">
+            <ResolutionSelect value={videoRes} onChange={setVideoRes} />
+            <GenerateButton
+              onClick={() =>
+                router.push(`/dashboard/video-generator?res=${videoRes}`)
+              }
+            />
+          </div>
         </ProductCard>
 
         {/* Thumbnail */}
         <ProductCard
           title="Thumbnail Generator"
-          desc="Generate YouTube thumbnails"
+          desc="Generate click-worthy YouTube thumbnails automatically."
           cost="40 credits"
+          icon={ImagePlus}
+          color="text-red-400"
+          bg="bg-red-400/10"
           onGenerate={() => router.push("/dashboard/thumbnail")}
         />
 
         {/* AI Ads */}
         <ProductCard
           title="AI Ads Generator"
-          desc="Generate AI-powered video ads"
+          desc="Generate high-converting AI-powered video ads for social media."
           cost={`${adsCost} credits`}
+          icon={Video}
+          color="text-orange-400"
+          bg="bg-orange-400/10"
         >
-          <ResolutionSelect value={adsRes} onChange={setAdsRes} />
-          <GenerateButton
-            onClick={() =>
-              router.push(`/dashboard/ads-generator?res=${adsRes}`)
-            }
-          />
+             <div className="flex items-center gap-3 w-full">
+            <ResolutionSelect value={adsRes} onChange={setAdsRes} />
+            <GenerateButton
+              onClick={() =>
+                router.push(`/dashboard/ads-generator?res=${adsRes}`)
+              }
+            />
+          </div>
         </ProductCard>
 
       </div>
@@ -97,25 +137,42 @@ function ProductCard({
   title,
   desc,
   cost,
+  icon: Icon,
+  color,
+  bg,
   onGenerate,
   children,
 }: {
   title: string;
   desc: string;
   cost: string;
+  icon?: any;
+  color?: string;
+  bg?: string;
   onGenerate?: () => void;
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl bg-white/5 border border-white/10 p-6 space-y-4 hover:scale-[1.02] transition">
-      <div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-gray-400">{desc}</p>
+    <div className="group relative rounded-2xl bg-[#111] border border-white/5 p-6 space-y-5 hover:border-white/20 hover:bg-[#161616] transition-all duration-300 flex flex-col h-full hover:-translate-y-1 hover:shadow-xl shadow-black/50">
+      
+      {/* Icon & Title */}
+      <div className="flex items-start justify-between">
+        <div className={cn("p-3 rounded-xl", bg)}>
+          {Icon ? <Icon className={cn("w-6 h-6", color)} /> : <Zap className="w-6 h-6 text-white" />}
+        </div>
+        <div className="bg-white/5 px-2.5 py-1 rounded-full text-xs font-medium text-gray-400 border border-white/5">
+          {cost}
+        </div>
       </div>
 
-      <p className="text-sm text-gray-400">Cost: {cost}</p>
+      <div className="space-y-2 flex-1">
+        <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{title}</h3>
+        <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
+      </div>
 
-      {children ?? <GenerateButton onClick={onGenerate!} />}
+      <div className="pt-2 mt-auto">
+        {children ?? <GenerateButton onClick={onGenerate!} fullWidth />}
+      </div>
     </div>
   );
 }
@@ -131,7 +188,7 @@ function ResolutionSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as any)}
-      className="bg-black border border-white/20 rounded-lg px-4 py-2 text-sm"
+      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
     >
       <option value="480p">480p</option>
       <option value="720p">720p</option>
@@ -139,13 +196,17 @@ function ResolutionSelect({
   );
 }
 
-function GenerateButton({ onClick }: { onClick: () => void }) {
+function GenerateButton({ onClick, fullWidth }: { onClick: () => void; fullWidth?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="px-6 py-2 bg-red-600 hover:bg-red-500 transition rounded-lg text-sm font-medium"
+      className={cn(
+        "group flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-purple-400 hover:text-white transition-all rounded-lg text-sm font-semibold",
+        fullWidth ? "w-full" : ""
+      )}
     >
       Generate
+      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
     </button>
   );
 }

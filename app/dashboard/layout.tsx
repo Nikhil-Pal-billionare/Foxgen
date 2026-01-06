@@ -1,4 +1,4 @@
-import Sidebar from "@/components/dashboard/Sidebar";
+import DashboardLayoutWrapper from "@/components/dashboard/DashboardLayoutWrapper";
 import { createClient } from "@/lib/supabaseServer";
 
 export default async function DashboardLayout({
@@ -32,9 +32,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0D0D0D] text-white">
-      <Sidebar isInfluencer={isInfluencer} />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <DashboardLayoutWrapper isInfluencer={isInfluencer}>
+      {children}
+    </DashboardLayoutWrapper>
   );
 }
