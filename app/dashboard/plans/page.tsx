@@ -133,7 +133,7 @@ export default function PlansPage() {
           features={FEATURES.pro}
           buttonLabel="Upgrade to Pro"
           onSelect={() => handleSelectPlan("pro")}
-          variant="purple"
+          variant="brand"
         />
 
         {/* ELITE */}
@@ -171,7 +171,7 @@ function PlanCard({
   buttonLabel: string;
   onSelect: () => void;
   isPopular?: boolean;
-  variant?: 'default' | 'blue' | 'purple' | 'orange';
+  variant?: 'default' | 'blue' | 'brand' | 'orange';
 }) {
 
   const variants = {
@@ -189,12 +189,12 @@ function PlanCard({
       button: "bg-blue-600 hover:bg-blue-500 text-white",
       glow: "shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)]"
     },
-    purple: {
-      border: "border-purple-500/50",
-      bg: "bg-gradient-to-b from-purple-900/20 to-[#0b0f19]",
-      badge: "bg-purple-500 text-white shadow-lg shadow-purple-500/30",
-      button: "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-500/25",
-      glow: "shadow-[0_0_40px_-5px_rgba(168,85,247,0.25)] border-t-purple-500/50 scale-[1.02] z-10"
+    brand: {
+      border: "border-purple-500/30",
+      bg: "bg-gradient-to-b from-purple-900/40 via-[#1a103c] to-[#0b0f19]",
+      badge: "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 text-white shadow-lg shadow-purple-500/40",
+      button: "bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500 hover:brightness-110 text-white shadow-lg shadow-purple-500/25",
+      glow: "shadow-[0_0_50px_-5px_rgba(139,92,246,0.3)] border-t-purple-500/50 scale-[1.02] z-10"
     },
     orange: {
       border: "border-orange-500/30",
@@ -218,7 +218,7 @@ function PlanCard({
       
       {isPopular && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <span className="px-4 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold uppercase tracking-wider shadow-lg">
+          <span className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 text-white text-xs font-bold uppercase tracking-wider shadow-lg">
             Most Popular
           </span>
         </div>

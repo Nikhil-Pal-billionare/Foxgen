@@ -139,7 +139,7 @@ function SidebarItem({
       className={cn(
         "group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
         active 
-          ? "bg-purple-600/10 text-purple-400 border border-purple-600/20 shadow-[0_0_15px_-3px_rgba(168,85,247,0.2)]" 
+          ? "bg-gradient-to-r from-violet-600/10 to-indigo-600/10 text-violet-400 border border-violet-500/20 shadow-[0_0_20px_-5px_rgba(139,92,246,0.3)]" 
           : "text-gray-400 hover:bg-white/5 hover:text-gray-200",
         isCollapsed ? "justify-center" : ""
       )}
@@ -160,7 +160,7 @@ function SidebarItem({
       </span>
 
       {!isCollapsed && badge && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border border-white/10 shadow-lg shadow-violet-500/20">
           {badge}
         </span>
       )}

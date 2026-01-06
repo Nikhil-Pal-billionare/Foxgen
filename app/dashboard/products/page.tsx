@@ -27,7 +27,7 @@ export default function ProductsPage() {
   return (
     <div className="space-y-10 pb-20">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Our Creative Suite</h1>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-cyan-200">Our Creative Suite</h1>
         <p className="text-gray-400">Powerful AI tools to supercharge your content creation</p>
       </div>
 
@@ -166,7 +166,7 @@ function ProductCard({
       </div>
 
       <div className="space-y-2 flex-1">
-        <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{title}</h3>
+        <h3 className="text-xl font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-400 group-hover:to-cyan-400 transition-colors">{title}</h3>
         <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
       </div>
 
@@ -188,7 +188,7 @@ function ResolutionSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as any)}
-      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
+      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
     >
       <option value="480p">480p</option>
       <option value="720p">720p</option>
@@ -201,7 +201,7 @@ function GenerateButton({ onClick, fullWidth }: { onClick: () => void; fullWidth
     <button
       onClick={onClick}
       className={cn(
-        "group flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-purple-400 hover:text-white transition-all rounded-lg text-sm font-semibold",
+        "group flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-gradient-to-r hover:from-violet-600 hover:to-cyan-500 hover:text-white transition-all rounded-lg text-sm font-semibold",
         fullWidth ? "w-full" : ""
       )}
     >
