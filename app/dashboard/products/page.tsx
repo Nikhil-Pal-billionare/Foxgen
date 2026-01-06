@@ -17,7 +17,6 @@ export default function ProductsPage() {
       <h1 className="text-2xl font-semibold">Our Products</h1>
 
       <div className="grid md:grid-cols-2 gap-6">
-
         {/* Script Generator */}
         <ProductCard
           title="Script Generator"
@@ -42,7 +41,7 @@ export default function ProductsPage() {
           onGenerate={() => router.push("/dashboard/image-generator")}
         />
 
-        {/* 🆕 AI CUT EDITOR */}
+        {/* AI Cut Editor */}
         <ProductCard
           title="AI Cut Editor"
           desc="Convert video/audio to text and detect cuts automatically"
@@ -85,7 +84,6 @@ export default function ProductsPage() {
             }
           />
         </ProductCard>
-
       </div>
     </div>
   );
@@ -107,15 +105,38 @@ function ProductCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl bg-white/5 border border-white/10 p-6 space-y-4 hover:scale-[1.02] transition">
+    <div
+      className="
+        group
+        rounded-3xl
+        bg-white/5
+        border border-white/10
+        p-6
+        space-y-4
+
+        transition-all duration-300 ease-out
+        hover:scale-[1.04]
+        hover:-translate-y-1
+        hover:border-red-500/40
+        hover:shadow-[0_0_30px_rgba(193,39,45,0.25)]
+      "
+    >
       <div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-gray-400">{desc}</p>
+        <h3 className="text-lg font-semibold group-hover:text-white transition">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-400 group-hover:text-gray-300 transition">
+          {desc}
+        </p>
       </div>
 
-      <p className="text-sm text-gray-400">Cost: {cost}</p>
+      <p className="text-sm text-gray-400">
+        Cost: <span className="text-white">{cost}</span>
+      </p>
 
-      {children ?? <GenerateButton onClick={onGenerate!} />}
+      <div className="pt-2">
+        {children ?? <GenerateButton onClick={onGenerate!} />}
+      </div>
     </div>
   );
 }
@@ -130,8 +151,16 @@ function ResolutionSelect({
   return (
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value as any)}
-      className="bg-black border border-white/20 rounded-lg px-4 py-2 text-sm"
+      onChange={(e) => onChange(e.target.value as "480p" | "720p")}
+      className="
+        bg-black
+        border border-white/20
+        rounded-lg
+        px-4 py-2
+        text-sm
+        focus:outline-none
+        focus:ring-2 focus:ring-red-500/40
+      "
     >
       <option value="480p">480p</option>
       <option value="720p">720p</option>
@@ -143,7 +172,17 @@ function GenerateButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="px-6 py-2 bg-red-600 hover:bg-red-500 transition rounded-lg text-sm font-medium"
+      className="
+        px-6 py-2
+        bg-red-600
+        rounded-lg
+        text-sm font-medium
+
+        transition-all duration-200
+        hover:bg-red-500
+        hover:scale-105
+        active:scale-95
+      "
     >
       Generate
     </button>

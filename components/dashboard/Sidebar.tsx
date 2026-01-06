@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,6 +12,8 @@ import {
   Package,
   Star,
   Scissors,
+  Menu,
+  X,
 } from "lucide-react";
 
 export default function Sidebar({
@@ -16,86 +21,113 @@ export default function Sidebar({
 }: {
   isInfluencer: boolean;
 }) {
-  return (
-    <aside className="w-64 bg-[#0b0f19] border-r border-white/10 p-4 flex flex-col">
+  const [open, setOpen] = useState(false);
 
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-8 px-2">
-        <Image
-          src="/demo/Foxgen-logo.png"
-          alt="FoxGen Logo"
-          width={28}
-          height={28}
-          priority
-        />
-        <span className="text-xl font-semibold">FoxGen</span>
+  return (
+    <>
+      {/* =========================
+          MOBILE TOP BAR
+      ========================= */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0b0f19] border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <Image src="/demo/Foxgen-logo.png" alt="FoxGen" width={24} height={24} />
+          <span className="font-semibold">FoxGen</span>
+        </div>
+
+        <button onClick={() => setOpen(true)}>
+          <Menu />
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="space-y-1 flex-1">
-        <SidebarItem
-          icon={LayoutDashboard}
-          label="Dashboard"
-          href="/dashboard"
+      {/* =========================
+          MOBILE OVERLAY
+      ========================= */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setOpen(false)}
         />
+      )}
 
-        <SidebarItem
-          icon={Package}
-          label="Products"
-          href="/dashboard/products"
-        />
+      {/* =========================
+          SIDEBAR
+      ========================= */}
+      <aside
+        className={`
+          fixed md:static z-50
+          h-screen
+          bg-[#0b0f19]
+          border-r border-white/10
+          flex flex-col
+          transition-all duration-300 ease-in-out
 
-        <SidebarItem
-          icon={ImageIcon}
-          label="Images"
-          href="/dashboard/image-generator"
-        />
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
 
-        <SidebarItem
-          icon={Video}
-          label="Videos"
-          href="/dashboard/video-generator"
-        />
+          w-64 md:w-[72px]
+          md:hover:w-64
+          group
+        `}
+      >
+        {/* =========================
+            HEADER
+        ========================= */}
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+          <Image
+            src="/demo/Foxgen-logo.png"
+            alt="FoxGen Logo"
+            width={28}
+            height={28}
+          />
 
-        {/* 🧠 AI CUT EDITOR */}
-        <SidebarItem
-          icon={Scissors}
-          label="AI Cut Editor"
-          href="/dashboard/cut-editor"
-        />
+          {/* Title → hidden until hover */}
+          <span
+            className="
+              text-lg font-semibold
+              opacity-100 md:opacity-0
+              md:group-hover:opacity-100
+              transition-opacity
+              whitespace-nowrap
+            "
+          >
+            FoxGen
+          </span>
 
-        <SidebarItem
-          icon={CreditCard}
-          label="Credits"
-          href="/dashboard/credits"
-        />
+          {/* Close (mobile only) */}
+          <button className="ml-auto md:hidden" onClick={() => setOpen(false)}>
+            <X />
+          </button>
+        </div>
 
-        <SidebarItem
-          icon={CreditCard}
-          label="Plans"
-          href="/dashboard/plans"
-        />
+        {/* =========================
+            NAV
+        ========================= */}
+        <nav className="flex-1 py-4 space-y-1">
+          <SidebarItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" />
+          <SidebarItem icon={Package} label="Products" href="/dashboard/products" />
+          <SidebarItem icon={ImageIcon} label="Images" href="/dashboard/image-generator" />
+          <SidebarItem icon={Video} label="Videos" href="/dashboard/video-generator" />
 
-        <SidebarItem
-          icon={History}
-          label="History"
-          href="/dashboard/history"
-        />
+          <SidebarItem
+            icon={Scissors}
+            label="AI Cut Editor"
+            href="/dashboard/cut-editor"
+            badge="NEW"
+          />
 
-        {/* Influencer Section */}
-        {isInfluencer && (
-          <>
-            <div className="border-t border-white/10 my-4" />
+          <SidebarItem icon={CreditCard} label="Credits" href="/dashboard/credits" />
+          <SidebarItem icon={CreditCard} label="Plans" href="/dashboard/plans" />
+          <SidebarItem icon={History} label="History" href="/dashboard/history" />
 
-            <SidebarItem
-              icon={Star}
-              label="Influencer"
-              href="/dashboard/influencer"
-            />
-          </>
-        )}
-      </nav>
-    </aside>
+          {isInfluencer && (
+            <>
+              <div className="border-t border-white/10 my-4" />
+              <SidebarItem icon={Star} label="Influencer" href="/dashboard/influencer" />
+            </>
+          )}
+        </nav>
+      </aside>
+    </>
   );
 }
 
@@ -117,7 +149,7 @@ function SidebarItem({
     <Link
       href={href}
       className="
-        group
+        group/item
         flex items-center gap-3
         px-4 py-2
         rounded-lg
@@ -125,13 +157,25 @@ function SidebarItem({
         hover:bg-white/10
         hover:text-white
         transition
-        hover:scale-[1.02]
+        mx-2
       "
     >
       <Icon size={18} className="shrink-0" />
 
-      <span className="flex-1">{label}</span>
+      {/* Label */}
+      <span
+        className="
+          flex-1
+          whitespace-nowrap
+          opacity-100 md:opacity-0
+          md:group-hover:opacity-100
+          transition-opacity
+        "
+      >
+        {label}
+      </span>
 
+      {/* Badge */}
       {badge && (
         <span
           className="
@@ -142,12 +186,12 @@ function SidebarItem({
             text-red-400
             border border-red-600/30
             font-semibold
-            group-hover:bg-red-600
-            group-hover:text-white
-            transition
+            opacity-100 md:opacity-0
+            md:group-hover:opacity-100
+            transition-opacity
           "
         >
-          {badge}
+          {badge}``
         </span>
       )}
     </Link>
