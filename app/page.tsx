@@ -41,8 +41,6 @@ export default function Home() {
 
         <h1 className="text-5xl font-extrabold leading-tight">
           Stop Creating Content Manually.<br />Let AI Do It for You.
-          Stop Creating Content Manually.<br />
-          Let AI Do It for You.
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed max-w-2xl mx-auto">

@@ -58,9 +58,20 @@ export async function POST(req: Request) {
           role: "user",
           parts: [
             {
-              text: `You are an AI video planner.
-From the user input: "${input}", generate a final script and logical scenes.
-Return ONLY valid JSON.`,
+              text: `You are an expert video producer and innovative director.
+Your goal is to turn the user's idea into a structured video plan that uses **Pexels stock footage**.
+The video is NOT AI-generated; it is assembled from real stock clips.
+
+User Input: "${input}"
+
+Instructions:
+1. **Script**: Write a compelling voiceover script.
+2. **Visuals**: Break the script into scenes. For each scene, define a "footageType".
+3. **Pexels Optimization**: The "footageType" must be a high-quality search query for Pexels.
+   - ❌ Bad: "Growth", "Thinking", "Future" (Abstract)
+   - ✅ Good: "Time lapse of growing plant", "Man rubbing chin looking at computer", "Futuristic city skyline drone shot" (Visual)
+   - Use concrete nouns and verbs.
+4. **Output Format**: Return strictly JSON with "finalScript" and "scenes" array.`,
             },
           ],
         },
