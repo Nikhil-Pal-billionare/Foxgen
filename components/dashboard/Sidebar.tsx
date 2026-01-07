@@ -14,6 +14,7 @@ import {
   Scissors,
   Menu,
   X,
+  Film,
 } from "lucide-react";
 
 export default function Sidebar({
@@ -22,6 +23,8 @@ export default function Sidebar({
   isInfluencer: boolean;
 }) {
   const [open, setOpen] = useState(false);
+
+  const closeSidebar = () => setOpen(false);
 
   return (
     <>
@@ -45,7 +48,8 @@ export default function Sidebar({
       {open && (
         <div
           className="fixed inset-0 bg-black/60 z-40 md:hidden"
-          onClick={() => setOpen(false)}
+          onClick={closeSidebar}
+          aria-hidden
         />
       )}
 
@@ -80,7 +84,6 @@ export default function Sidebar({
             height={28}
           />
 
-          {/* Title → hidden until hover */}
           <span
             className="
               text-lg font-semibold
@@ -93,8 +96,7 @@ export default function Sidebar({
             FoxGen
           </span>
 
-          {/* Close (mobile only) */}
-          <button className="ml-auto md:hidden" onClick={() => setOpen(false)}>
+          <button className="ml-auto md:hidden" onClick={closeSidebar}>
             <X />
           </button>
         </div>
@@ -103,26 +105,80 @@ export default function Sidebar({
             NAV
         ========================= */}
         <nav className="flex-1 py-4 space-y-1">
-          <SidebarItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" />
-          <SidebarItem icon={Package} label="Products" href="/dashboard/products" />
-          <SidebarItem icon={ImageIcon} label="Images" href="/dashboard/image-generator" />
-          <SidebarItem icon={Video} label="Videos" href="/dashboard/video-generator" />
+          <SidebarItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            href="/dashboard"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={Package}
+            label="Products"
+            href="/dashboard/products"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={Film}
+            label="B-Roll Library"
+            href="/dashboard/broll"
+            badge="NEW"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={ImageIcon}
+            label="Images"
+            href="/dashboard/image-generator"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={Video}
+            label="Videos"
+            href="/dashboard/video-generator"
+            onClick={closeSidebar}
+          />
 
           <SidebarItem
             icon={Scissors}
             label="AI Cut Editor"
             href="/dashboard/cut-editor"
             badge="NEW"
+            onClick={closeSidebar}
           />
 
-          <SidebarItem icon={CreditCard} label="Credits" href="/dashboard/credits" />
-          <SidebarItem icon={CreditCard} label="Plans" href="/dashboard/plans" />
-          <SidebarItem icon={History} label="History" href="/dashboard/history" />
+          <SidebarItem
+            icon={CreditCard}
+            label="Credits"
+            href="/dashboard/credits"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={CreditCard}
+            label="Plans"
+            href="/dashboard/plans"
+            onClick={closeSidebar}
+          />
+
+          <SidebarItem
+            icon={History}
+            label="History"
+            href="/dashboard/history"
+            onClick={closeSidebar}
+          />
 
           {isInfluencer && (
             <>
               <div className="border-t border-white/10 my-4" />
-              <SidebarItem icon={Star} label="Influencer" href="/dashboard/influencer" />
+              <SidebarItem
+                icon={Star}
+                label="Influencer"
+                href="/dashboard/influencer"
+                onClick={closeSidebar}
+              />
             </>
           )}
         </nav>
@@ -139,15 +195,18 @@ function SidebarItem({
   label,
   href,
   badge,
+  onClick,
 }: {
   icon: any;
   label: string;
   href: string;
   badge?: "NEW" | "BETA";
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="
         group/item
         flex items-center gap-3
@@ -162,7 +221,6 @@ function SidebarItem({
     >
       <Icon size={18} className="shrink-0" />
 
-      {/* Label */}
       <span
         className="
           flex-1
@@ -175,7 +233,6 @@ function SidebarItem({
         {label}
       </span>
 
-      {/* Badge */}
       {badge && (
         <span
           className="
@@ -191,7 +248,7 @@ function SidebarItem({
             transition-opacity
           "
         >
-          {badge}``
+          {badge}
         </span>
       )}
     </Link>

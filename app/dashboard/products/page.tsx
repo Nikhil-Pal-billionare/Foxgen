@@ -49,6 +49,14 @@ export default function ProductsPage() {
           onGenerate={() => router.push("/dashboard/cut-editor")}
         />
 
+        {/* 🎬 B-Roll Library */}
+        <ProductCard
+          title="B-Roll Library"
+          desc="Search stock footage or generate AI-assisted b-roll using Pexels"
+          cost="10 credits"
+          onGenerate={() => router.push("/dashboard/broll")}
+        />
+
         {/* Image to Video */}
         <ProductCard
           title="Image to Video"
