@@ -66,7 +66,7 @@ export default function ProductsPage() {
           onGenerate={() => router.push("/dashboard/image-generator")}
         />
 
-        {/* 🆕 AI CUT EDITOR */}
+        {/* AI Cut Editor */}
         <ProductCard
           title="AI Cut Editor"
           desc="Smartly detect silences and cuts in your video/audio to speed up editing."
@@ -75,6 +75,14 @@ export default function ProductsPage() {
           color="text-pink-400"
           bg="bg-pink-400/10"
           onGenerate={() => router.push("/dashboard/cut-editor")}
+        />
+
+        {/* 🎬 B-Roll Library */}
+        <ProductCard
+          title="B-Roll Library"
+          desc="Search stock footage or generate AI-assisted b-roll using Pexels"
+          cost="10 credits"
+          onGenerate={() => router.push("/dashboard/broll")}
         />
 
         {/* Image to Video */}
@@ -125,7 +133,6 @@ export default function ProductsPage() {
             />
           </div>
         </ProductCard>
-
       </div>
     </div>
   );
@@ -172,6 +179,37 @@ function ProductCard({
 
       <div className="pt-2 mt-auto">
         {children ?? <GenerateButton onClick={onGenerate!} fullWidth />}
+    <div
+      className="
+        group
+        rounded-3xl
+        bg-white/5
+        border border-white/10
+        p-6
+        space-y-4
+
+        transition-all duration-300 ease-out
+        hover:scale-[1.04]
+        hover:-translate-y-1
+        hover:border-red-500/40
+        hover:shadow-[0_0_30px_rgba(193,39,45,0.25)]
+      "
+    >
+      <div>
+        <h3 className="text-lg font-semibold group-hover:text-white transition">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-400 group-hover:text-gray-300 transition">
+          {desc}
+        </p>
+      </div>
+
+      <p className="text-sm text-gray-400">
+        Cost: <span className="text-white">{cost}</span>
+      </p>
+
+      <div className="pt-2">
+        {children ?? <GenerateButton onClick={onGenerate!} />}
       </div>
     </div>
   );
@@ -187,8 +225,16 @@ function ResolutionSelect({
   return (
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value as any)}
-      className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-violet-500 transition-colors"
+      onChange={(e) => onChange(e.target.value as "480p" | "720p")}
+      className="
+        bg-black
+        border border-white/20
+        rounded-lg
+        px-4 py-2
+        text-sm
+        focus:outline-none
+        focus:ring-2 focus:ring-red-500/40
+      "
     >
       <option value="480p">480p</option>
       <option value="720p">720p</option>
@@ -204,6 +250,17 @@ function GenerateButton({ onClick, fullWidth }: { onClick: () => void; fullWidth
         "group flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-gradient-to-r hover:from-violet-600 hover:to-cyan-500 hover:text-white transition-all rounded-lg text-sm font-semibold",
         fullWidth ? "w-full" : ""
       )}
+      className="
+        px-6 py-2
+        bg-red-600
+        rounded-lg
+        text-sm font-medium
+
+        transition-all duration-200
+        hover:bg-red-500
+        hover:scale-105
+        active:scale-95
+      "
     >
       Generate
       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
