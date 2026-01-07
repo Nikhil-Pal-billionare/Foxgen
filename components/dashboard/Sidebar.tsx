@@ -11,6 +11,7 @@ import {
   History,
   Package,
   Star,
+  Wallet,
   Scissors,
   Menu,
   X,
@@ -157,7 +158,7 @@ export default function Sidebar({
           />
 
           <SidebarItem
-            icon={CreditCard}
+            icon={Wallet}
             label="Plans"
             href="/dashboard/plans"
             onClick={closeSidebar}
