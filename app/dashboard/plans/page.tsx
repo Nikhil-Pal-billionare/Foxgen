@@ -213,7 +213,6 @@ function PlanCard({
         style.border,
         style.bg,
         style.glow,
-        isPopular ? "md:-mt-4" : "" 
     )}>
       
       {isPopular && (
