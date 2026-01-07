@@ -12,6 +12,7 @@ import {
   X,
   Film,
 } from "lucide-react";
+import Link from "next/link";
 
 /* =========================
    TYPES
@@ -30,6 +31,7 @@ type SidebarItemProps = {
   href: string;
   badge?: "NEW" | "BETA";
   onClick?: () => void;
+  isCollapsed: boolean;
 };
 
 /* =========================
@@ -49,7 +51,7 @@ export default function Sidebar({
       ========================= */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0b0f19] border-b border-white/10">
         <div className="flex items-center gap-2">
-          <Image
+          <img
             src="/demo/Foxgen-logo.png"
             alt="FoxGen"
             width={24}
@@ -96,7 +98,7 @@ export default function Sidebar({
             HEADER
         ========================= */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
-          <Image
+          <img
             src="/demo/Foxgen-logo.png"
             alt="FoxGen Logo"
             width={28}
@@ -129,6 +131,7 @@ export default function Sidebar({
             label="Dashboard"
             href="/dashboard"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -136,6 +139,7 @@ export default function Sidebar({
             label="Products"
             href="/dashboard/products"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -143,6 +147,7 @@ export default function Sidebar({
             label="B-Roll Library"
             href="/dashboard/broll"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -150,6 +155,7 @@ export default function Sidebar({
             label="Images"
             href="/dashboard/image-generator"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -157,6 +163,7 @@ export default function Sidebar({
             label="Videos"
             href="/dashboard/video-generator"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -164,6 +171,7 @@ export default function Sidebar({
             label="Credits"
             href="/dashboard/credits"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -171,6 +179,7 @@ export default function Sidebar({
             label="Plans"
             href="/dashboard/plans"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           <SidebarItem
@@ -178,6 +187,7 @@ export default function Sidebar({
             label="History"
             href="/dashboard/history"
             onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
           />
 
           {isInfluencer && (
@@ -188,6 +198,7 @@ export default function Sidebar({
                 label="Influencer"
                 href="/dashboard/influencer"
                 onClick={onCloseMobile}
+                isCollapsed={isCollapsed}
               />
             </>
           )}
@@ -206,6 +217,7 @@ function SidebarItem({
   href,
   badge,
   onClick,
+  isCollapsed,
 }: SidebarItemProps) {
   return (
     <Link
@@ -226,20 +238,20 @@ function SidebarItem({
       <Icon size={18} className="shrink-0" />
 
       <span
-        className="
+        className={`
           flex-1
           whitespace-nowrap
           transition-opacity
-          opacity-100 md:opacity-0
+          ${isCollapsed ? "md:opacity-0" : "opacity-100"}
           md:group-hover:opacity-100
-        "
+        `}
       >
         {label}
       </span>
 
       {badge && (
         <span
-          className="
+          className={`
             text-[10px]
             px-2 py-0.5
             rounded-full
@@ -247,10 +259,10 @@ function SidebarItem({
             text-red-400
             border border-red-600/30
             font-semibold
-            opacity-100 md:opacity-0
-            md:group-hover:opacity-100
             transition-opacity
-          "
+            ${isCollapsed ? "md:opacity-0" : "opacity-100"}
+            md:group-hover:opacity-100
+          `}
         >
           {badge}
         </span>
