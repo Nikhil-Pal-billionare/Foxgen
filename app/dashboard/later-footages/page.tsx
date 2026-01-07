@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseBrowser";
 
 export default function LaterFootages() {
-  const supabase = createClient();
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("later_footages")
-      .select("*")
-      .then(({ data }) => setItems(data || []));
+    async function fetchData() {
+      const { data, error } = await supabase
+        .from("later_footages")
+        .select("*");
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setItems(data ?? []);
+    }
+
+    fetchData();
   }, []);
 
   return (
@@ -23,7 +32,11 @@ export default function LaterFootages() {
           <div key={item.id} className="border p-4">
             <h2>{item.title}</h2>
             {item.clips?.map((c: any, i: number) => (
-              <video key={i} src={c.video_files[0].link} controls />
+              <video
+                key={i}
+                src={c.video_files?.[0]?.link}
+                controls
+              />
             ))}
           </div>
         ))}
@@ -31,3 +44,4 @@ export default function LaterFootages() {
     </div>
   );
 }
+
