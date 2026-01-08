@@ -31,7 +31,7 @@ export default function GeneratorCard({
 
         <button
           onClick={onGenerateAction}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
         >
           Generate
         </button>

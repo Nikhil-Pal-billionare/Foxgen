@@ -52,7 +52,7 @@ export default function PaymentClient() {
           Plan: <b className="capitalize">{planId}</b>
         </p>
 
-        <p className="text-center text-2xl font-bold text-[#C1272D]">
+        <p className="text-center text-2xl font-bold text-[#3B82F6]">
           {pricing.symbol}{finalPrice}
         </p>
 
@@ -63,11 +63,11 @@ export default function PaymentClient() {
           className="w-full bg-black border border-gray-700 rounded px-3 py-2"
         />
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-blue-500 text-sm">{error}</p>}
 
         <button
           disabled={loading}
-          className="w-full bg-red-600 py-3 rounded font-semibold"
+          className="w-full bg-blue-600 py-3 rounded font-semibold"
         >
           {loading ? "Processing..." : "Pay Now"}
         </button>

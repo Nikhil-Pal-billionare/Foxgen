@@ -36,13 +36,13 @@ export default function SignInPage() {
         <InputField label="Email" id="email" type="email" value={email} onChange={setEmail} />
         <InputField label="Password" id="password" type="password" value={password} onChange={setPassword} />
 
-        <Button className="w-full bg-[#C1272D] hover:bg-[#a02025]" type="submit">
+        <Button className="w-full bg-[#3B82F6] hover:bg-[#2563EB]" type="submit">
           Sign In
         </Button>
 
         <p className="text-sm text-center mt-2 text-gray-400">
           Don't have an account?{" "}
-          <a href="/sign-up" className="text-[#C1272D] underline">Sign Up</a>
+          <a href="/sign-up" className="text-[#3B82F6] underline">Sign Up</a>
         </p>
       </form>
     </AuthCard>

@@ -22,6 +22,7 @@ type SidebarProps = {
   isCollapsed: boolean;
   isMobileOpen: boolean;
   onToggleCollapse: () => void;
+  onOpenMobile: () => void;
   onCloseMobile: () => void;
 };
 
@@ -42,6 +43,7 @@ export default function Sidebar({
   isCollapsed,
   isMobileOpen,
   onToggleCollapse,
+  onOpenMobile,
   onCloseMobile,
 }: SidebarProps) {
   return (
@@ -49,7 +51,10 @@ export default function Sidebar({
       {/* =========================
           MOBILE TOP BAR
       ========================= */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0b0f19] border-b border-white/10">
+      <div className="md:hidden flex items-center px-4 py-3 bg-[#0b0f19] border-b border-white/10 gap-4">
+        <button onClick={onOpenMobile}>
+          <Menu />
+        </button>
         <div className="flex items-center gap-2">
           <img
             src="/demo/Foxgen-logo.png"
@@ -59,10 +64,6 @@ export default function Sidebar({
           />
           <span className="font-semibold">FoxGen</span>
         </div>
-
-        <button onClick={onToggleCollapse}>
-          <Menu />
-        </button>
       </div>
 
       {/* =========================
@@ -255,9 +256,9 @@ function SidebarItem({
             text-[10px]
             px-2 py-0.5
             rounded-full
-            bg-red-600/20
-            text-red-400
-            border border-red-600/30
+            bg-blue-600/20
+            text-blue-400
+            border border-blue-600/30
             font-semibold
             transition-opacity
             ${isCollapsed ? "md:opacity-0" : "opacity-100"}

@@ -77,7 +77,7 @@ export default function CutEditorPage() {
       <button
         onClick={runAnalysis}
         disabled={loading}
-        className="bg-red-600 px-6 py-2 rounded"
+        className="bg-blue-600 px-6 py-2 rounded"
       >
         {loading ? "Analyzing..." : "Analyze Media"}
       </button>

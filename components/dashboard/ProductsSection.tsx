@@ -81,8 +81,8 @@ export default function ProductsSection() {
               className="
                 px-6 py-2
                 rounded-lg
-                bg-red-600
-                hover:bg-red-500
+                bg-blue-600
+                hover:bg-blue-500
                 transition
                 text-sm
                 font-medium

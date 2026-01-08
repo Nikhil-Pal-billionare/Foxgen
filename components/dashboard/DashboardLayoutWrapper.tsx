@@ -17,18 +17,8 @@ export default function DashboardLayoutWrapper({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#0D0D0D] text-white">
-      {/* Mobile Hamburger Trigger */}
-      <div className={`md:hidden fixed top-4 left-4 z-50 ${isMobileOpen ? "hidden" : "block"}`}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsMobileOpen(true)}
-          className="bg-[#0b0f19] border border-white/10 text-white"
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-      </div>
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#0D0D0D] text-white">
+      {/* Mobile Hamburger Trigger Removed - now in Sidebar */}
 
       {/* Sidebar */}
       <Sidebar
@@ -36,14 +26,12 @@ export default function DashboardLayoutWrapper({
         isCollapsed={isCollapsed}
         isMobileOpen={isMobileOpen}
         onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        onOpenMobile={() => setIsMobileOpen(true)}
         onCloseMobile={() => setIsMobileOpen(false)}
       />
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen">
-        {/* Top spacer for mobile to account for hamburger if needed, 
-            but sidebar is overlaid so maybe just standard padding */}
-        <div className="md:hidden h-12" /> 
         {children}
       </main>
 

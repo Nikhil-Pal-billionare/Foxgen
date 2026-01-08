@@ -153,7 +153,7 @@ export default function ThumbnailPage() {
               disabled={loading}
               className="
                 ml-auto px-6 py-2
-                bg-red-600 hover:bg-red-700
+                bg-blue-600 hover:bg-blue-700
                 rounded font-semibold
                 disabled:opacity-60
               "
@@ -163,7 +163,7 @@ export default function ThumbnailPage() {
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm">{error}</p>
+            <p className="text-blue-500 text-sm">{error}</p>
           )}
         </div>
 

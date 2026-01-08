@@ -83,7 +83,7 @@ export default function VideoGeneratorPage() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 text-white">
       <div className="flex items-center gap-3 mb-8">
-        <Film className="text-red-600" />
+        <Film className="text-blue-600" />
         <h1 className="text-4xl font-black">AI Video Generator</h1>
       </div>
 
@@ -98,7 +98,7 @@ export default function VideoGeneratorPage() {
       {step < 3 && (
         <button
           onClick={generatePlan}
-          className="mt-6 w-full py-4 bg-red-600 rounded-xl font-bold"
+          className="mt-6 w-full py-4 bg-blue-600 rounded-xl font-bold"
         >
           <Sparkles size={18} className="inline mr-2" />
           Generate Video Plan
@@ -142,7 +142,7 @@ export default function VideoGeneratorPage() {
       )}
 
       {error && (
-        <div className="fixed bottom-6 right-6 bg-red-700 px-6 py-4 rounded-xl">
+        <div className="fixed bottom-6 right-6 bg-blue-700 px-6 py-4 rounded-xl">
           {error}
         </div>
       )}

@@ -59,7 +59,7 @@ export default function ScriptGeneratorPage() {
       <button
         onClick={generateScript}
         disabled={loading}
-        className="px-6 py-2 bg-red-600 hover:bg-red-500 transition rounded-lg"
+        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 transition rounded-lg"
       >
         {loading ? "Generating..." : "Generate Script"}
       </button>

@@ -39,7 +39,7 @@ export default async function AdminWaitlistPage({ searchParams }: { searchParams
       </div>
 
       {error && (
-        <p className="text-red-400">{error.message}</p>
+        <p className="text-blue-400">{error.message}</p>
       )}
 
       <div className="overflow-auto border border-gray-800 rounded-lg">
