@@ -57,7 +57,7 @@ export default function Sidebar({
         </button>
         <div className="flex items-center gap-2">
           <img
-            src="/demo/Foxgen-logo.png"
+            src="/demo/foxgen-logo.png"
             alt="FoxGen"
             width={24}
             height={24}
@@ -100,7 +100,7 @@ export default function Sidebar({
         ========================= */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
           <img
-            src="/demo/Foxgen-logo.png"
+            src="/demo/foxgen-logo.png"
             alt="FoxGen Logo"
             width={28}
             height={28}
