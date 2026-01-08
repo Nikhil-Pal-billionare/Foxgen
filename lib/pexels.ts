@@ -1,27 +1,36 @@
 export type PexelsVideo = {
   id: number;
-  image: string;
   video_files: {
     id: number;
     quality: string;
+    file_type: string;
     link: string;
   }[];
 };
 
-export async function fetchPexelsVideos(query: string): Promise<PexelsVideo[]> {
+const PEXELS_API = "https://api.pexels.com/videos/search";
+
+export async function fetchPexelsVideos(
+  query: string,
+  perPage = 5
+): Promise<PexelsVideo[]> {
+  if (!process.env.PEXELS_API_KEY) {
+    throw new Error("PEXELS_API_KEY missing");
+  }
+
   const res = await fetch(
-    `https://api.pexels.com/videos/search?query=${encodeURIComponent(
-      query
-    )}&per_page=6`,
+    `${PEXELS_API}?query=${encodeURIComponent(query)}&per_page=${perPage}`,
     {
       headers: {
-        Authorization: process.env.NEXT_PUBLIC_PEXELS_API_KEY!,
+        Authorization: process.env.PEXELS_API_KEY, // ✅ THIS IS REQUIRED
       },
     }
   );
 
   if (!res.ok) {
-    throw new Error("Failed to fetch Pexels videos");
+    const text = await res.text();
+    console.error("PEXELS ERROR:", text);
+    throw new Error("Pexels API failed");
   }
 
   const data = await res.json();
