@@ -1,153 +1,148 @@
 "use client";
 
-import { useState } from "react";
-import { deductCredits } from "@/utils/deductCredits";
-import { CREDIT_COSTS } from "@/lib/creditCosts";
-
-import { fetchPexelsVideos, PexelsVideo } from "@/lib/pexels";
-import {
-  Sparkles,
-  Film,
-  ChevronUp,
-  ChevronDown,
-  Loader2,
-  CheckCircle2,
-  Play,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Sparkles, Film, Loader2 } from "lucide-react";
 
 type Scene = {
   id: number;
   text: string;
-  footageType: string;
-  videos: PexelsVideo[];
+  footageQuery: string;
+  videos: any[];
   selectedVideo?: string;
 };
 
 export default function VideoGeneratorPage() {
-  const [userInput, setUserInput] = useState("");
+  const params = useSearchParams();
+  const scriptFromUrl = params.get("script");
+
   const [script, setScript] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState("");
 
-  // ✅ STEP 1 — Deduct credits ONCE and generate plan
-  const generatePlan = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      // 1️⃣ Deduct credits FIRST
-      const creditResult = await deductCredits({ amount: CREDIT_COSTS.video_plan, reason: "video_plan" }); // e.g. 52
-
-      if (!creditResult?.success) {
-        setError("Insufficient credits. Please recharge to continue.");
-        return;
-      }
-
-      // 2️⃣ Call Gemini ONLY after credits are deducted
-      const res = await fetch("/api/gemini/video-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: userInput }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Gemini API failed");
-      }
-
-      const data = await res.json();
-
-      setScript(data.finalScript);
-      setScenes(
-        data.scenes.map((s: any, i: number) => ({
-          ...s,
-          id: i,
-          videos: [],
-        }))
-      );
+  useEffect(() => {
+    if (scriptFromUrl) {
+      setScript(scriptFromUrl);
       setStep(2);
-    } catch (err) {
-  console.error("DEBUG ERROR:", err); // Isse console mein asli error dikhega
-  setError(`Error: ${err instanceof Error ? err.message : "Something went wrong"}`);
-}
-  };
+    }
+  }, [scriptFromUrl]);
 
-  const finalizeAndFetch = async () => {
+  async function generatePlan() {
+    if (!script.trim()) return;
+
+    const lines = script
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const generated: Scene[] = lines.map((line, i) => ({
+      id: i,
+      text: line,
+      footageQuery: line
+        .replace(/[^a-zA-Z0-9 ]/g, "")
+        .toLowerCase()
+        .slice(0, 80),
+      videos: [],
+    }));
+
+    setScenes(generated);
+    setStep(3);
+  }
+
+  async function fetchFootage() {
     try {
       setLoading(true);
+      const updated = [...scenes];
 
-      const updatedScenes = [...scenes];
-      for (let i = 0; i < updatedScenes.length; i++) {
-        const videos = await fetchPexelsVideos(updatedScenes[i].footageType);
-        updatedScenes[i].videos = videos;
-        updatedScenes[i].selectedVideo =
-          videos[0]?.video_files[0]?.link;
+      for (let i = 0; i < updated.length; i++) {
+        const res = await fetch("/api/pexels", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: updated[i].footageQuery,
+            perPage: 3,
+          }),
+        });
+
+        const videos = await res.json();
+        updated[i].videos = videos;
+        updated[i].selectedVideo =
+          videos?.[0]?.video_files?.[0]?.link;
       }
 
-      setScenes(updatedScenes);
-      setStep(3);
+      setScenes(updated);
     } catch {
-      setError("Failed to fetch footage.");
+      setError("Failed to fetch footage");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12 min-h-screen text-slate-200">
-      {/* Header */}
-      <div className="flex justify-between mb-12">
-        <h1 className="text-4xl font-black text-white flex gap-3">
-          <Film className="text-red-600" /> AI Video Studio
-        </h1>
+    <div className="max-w-6xl mx-auto px-6 py-12 text-white">
+      <div className="flex items-center gap-3 mb-8">
+        <Film className="text-red-600" />
+        <h1 className="text-4xl font-black">AI Video Generator</h1>
       </div>
 
-      {/* STEP 1 */}
-      {step === 1 && (
-        <div className="max-w-3xl mx-auto">
-          <textarea
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            className="w-full h-48 p-6 bg-black/50 rounded-2xl"
-            placeholder="Describe your video..."
-          />
-          <button
-            onClick={generatePlan}
-            disabled={loading || !userInput}
-            className="w-full mt-6 py-4 bg-red-600 rounded-xl font-bold"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin mx-auto" />
-            ) : (
-              <>
-                <Sparkles size={18} /> Generate Video Plan
-              </>
-            )}
-          </button>
-        </div>
+      {step < 3 && (
+        <textarea
+          value={script}
+          onChange={(e) => setScript(e.target.value)}
+          className="w-full h-48 p-6 bg-black/50 rounded-xl"
+        />
       )}
 
-      {/* STEP 2 */}
-      {step === 2 && (
+      {step < 3 && (
         <button
-          onClick={finalizeAndFetch}
-          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
+          onClick={generatePlan}
+          className="mt-6 w-full py-4 bg-red-600 rounded-xl font-bold"
         >
-          Confirm & Fetch Footage
+          <Sparkles size={18} className="inline mr-2" />
+          Generate Video Plan
         </button>
       )}
 
-      {/* STEP 3 */}
-      {step === 3 &&
-        scenes.map((scene, i) => (
-          <div key={scene.id} className="mb-12">
-            <p className="text-xl italic">"{scene.text}"</p>
-          </div>
-        ))}
+      {step === 3 && (
+        <>
+          <button
+            onClick={fetchFootage}
+            className="mb-8 px-6 py-3 bg-white text-black rounded-xl font-bold"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Generate Video"
+            )}
+          </button>
+
+          {scenes.map((scene) => (
+            <div
+              key={scene.id}
+              className="mb-10 p-6 bg-white/5 rounded-xl"
+            >
+              <p className="italic mb-4">“{scene.text}”</p>
+
+              {scene.selectedVideo ? (
+                <video
+                  src={scene.selectedVideo}
+                  controls
+                  className="w-full rounded-xl"
+                />
+              ) : (
+                <p className="text-gray-400">
+                  No footage yet
+                </p>
+              )}
+            </div>
+          ))}
+        </>
+      )}
 
       {error && (
-        <div className="fixed bottom-8 right-8 bg-red-800 px-6 py-4 rounded-xl">
+        <div className="fixed bottom-6 right-6 bg-red-700 px-6 py-4 rounded-xl">
           {error}
         </div>
       )}

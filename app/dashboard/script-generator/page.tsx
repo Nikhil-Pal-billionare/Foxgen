@@ -9,7 +9,7 @@ export default function ScriptGeneratorPage() {
   const [script, setScript] = useState("");
   const router = useRouter();
 
-  const generateScript = async () => {
+  async function generateScript() {
     if (!idea.trim()) return;
 
     setLoading(true);
@@ -17,7 +17,7 @@ export default function ScriptGeneratorPage() {
 
     const res = await fetch("/api/script-generator", {
       method: "POST",
-      credentials: "include", // 🔥 REQUIRED
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idea }),
     });
@@ -31,13 +31,19 @@ export default function ScriptGeneratorPage() {
     }
 
     setScript(data.finalScript);
-  };
+  }
 
-  const goToVoiceover = () => {
+  function goToVoiceover() {
     router.push(
       `/dashboard/voiceover-generator?script=${encodeURIComponent(script)}`
     );
-  };
+  }
+
+  function goToVideoGenerator() {
+    router.push(
+      `/dashboard/video-generator?script=${encodeURIComponent(script)}`
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -53,21 +59,30 @@ export default function ScriptGeneratorPage() {
       <button
         onClick={generateScript}
         disabled={loading}
-        className="px-6 py-2 bg-red-600 rounded-lg"
+        className="px-6 py-2 bg-red-600 hover:bg-red-500 transition rounded-lg"
       >
         {loading ? "Generating..." : "Generate Script"}
       </button>
 
       {script && (
-        <div className="bg-white/5 p-4 rounded-xl whitespace-pre-wrap">
-          {script}
+        <div className="bg-white/5 p-4 rounded-xl whitespace-pre-wrap space-y-4">
+          <p>{script}</p>
 
-          <button
-            onClick={goToVoiceover}
-            className="mt-4 block px-4 py-2 bg-blue-600 rounded-lg"
-          >
-            Generate Voiceover →
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={goToVoiceover}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 transition rounded-lg"
+            >
+              🎤 Generate Voiceover
+            </button>
+
+            <button
+              onClick={goToVideoGenerator}
+              className="px-4 py-2 bg-green-600 hover:bg-green-500 transition rounded-lg"
+            >
+              🎬 Generate Video
+            </button>
+          </div>
         </div>
       )}
     </div>
