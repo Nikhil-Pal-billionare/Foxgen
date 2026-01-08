@@ -95,10 +95,10 @@ export default function BrollPage() {
           onClick={search}
           disabled={loading}
           className="
-            bg-red-600
+            bg-blue-600
             text-white
-            hover:bg-red-500
-            active:bg-red-700
+            hover:bg-blue-500
+            active:bg-blue-700
             disabled:opacity-60
           "
         >
@@ -147,10 +147,10 @@ export default function BrollPage() {
               onClick={generateAI}
               disabled={generating}
               className="
-                bg-red-600
+                bg-blue-600
                 text-white
-                hover:bg-red-500
-                active:bg-red-700
+                hover:bg-blue-500
+                active:bg-blue-700
                 disabled:opacity-60
                 disabled:cursor-not-allowed
               "
@@ -188,10 +188,10 @@ export default function BrollPage() {
             onClick={generateAI}
             disabled={generating}
             className="
-              bg-red-600
+              bg-blue-600
               text-white
-              hover:bg-red-500
-              active:bg-red-700
+              hover:bg-blue-500
+              active:bg-blue-700
               disabled:opacity-60
             "
           >

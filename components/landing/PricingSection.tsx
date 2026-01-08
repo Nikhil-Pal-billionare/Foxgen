@@ -108,7 +108,7 @@ export function PricingSection({
                 {/* Price */}
                 {plan.id === "free" ? (
                   <div className="mt-2">
-                    <span className="text-3xl font-extrabold text-[#C1272D]">
+                    <span className="text-3xl font-extrabold text-[#3B82F6]">
                       {pricing.symbol}0
                     </span>
                     <span className="text-sm text-gray-400"> /forever</span>
@@ -120,7 +120,7 @@ export function PricingSection({
                       {planData!.original}
                     </span>
 
-                    <span className="text-3xl font-extrabold text-[#C1272D]">
+                    <span className="text-3xl font-extrabold text-[#3B82F6]">
                       {pricing.symbol}
                       {planData!.discounted}
                       <span className="text-sm text-gray-400 font-normal">
@@ -150,9 +150,9 @@ export function PricingSection({
                 onClick={() => onSelectPlanAction(plan.id)}
                 disabled={!!loadingPlanId}
                 className="
-                  w-full bg-[#C1272D]
-                  hover:bg-[#A02025]
-                  disabled:bg-[#C1272D]/50
+                  w-full bg-[#3B82F6]
+                  hover:bg-[#2563EB]
+                  disabled:bg-[#3B82F6]/50
                 "
               >
                 {loadingPlanId === plan.id

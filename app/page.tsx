@@ -33,13 +33,13 @@ export default function Home() {
     <main className="min-h-screen bg-[#0D0D0D] text-white">
 
       {/* Hero Section */}
-      <section className="text-center py-24 px-6 space-y-8 max-w-4xl mx-auto">
+      <section className="text-center py-12 md:py-24 px-6 space-y-8 max-w-4xl mx-auto">
 
         <div className="mb-4">
           <FoxgenLogo size={140} />
         </div>
 
-        <h1 className="text-5xl font-extrabold leading-tight">
+        <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
           Stop Creating Content Manually.<br />Let AI Do It for You.
         </h1>
 
@@ -50,7 +50,7 @@ export default function Home() {
 
         <button
           onClick={handleStartCreating}
-          className="inline-block mt-6 px-10 py-3 bg-[#C1272D] hover:bg-[#A02025]
+          className="inline-block mt-6 px-6 md:px-10 py-3 bg-[#3B82F6] hover:bg-[#2563EB]
                     rounded-xl text-lg font-semibold transition"
         >
           Start Creating
@@ -58,10 +58,10 @@ export default function Home() {
     </section>
 
     {/* Sample Images Section */ }
-    <section className="max-w-6xl mx-auto px-6 py-16">
-      <h2 className="text-3xl font-bold mb-6 text-center">AI Image Samples</h2>
+    <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">AI Image Samples</h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <img src="/demo/car.png" className="rounded-xl" alt="Sample 1" />
         <img src="/demo/cat.png" className="rounded-xl" alt="Sample 2" />
         <img src="/demo/dance.png" className="rounded-xl" alt="Sample 3" />
@@ -73,7 +73,7 @@ export default function Home() {
       <div className="text-center mt-8">
         <button
           onClick={handleStartCreating}
-          className="px-8 py-3 bg-[#C1272D] rounded-lg hover:bg-[#A02025] text-lg font-medium"
+          className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
         >
           Generate Your Own
         </button>

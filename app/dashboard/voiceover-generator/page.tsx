@@ -105,7 +105,7 @@ export default function VoiceoverGeneratorPage() {
         disabled={loading}
         className="
           px-6 py-2
-          bg-red-600 hover:bg-red-700
+          bg-blue-600 hover:bg-blue-700
           rounded-lg font-semibold
           disabled:opacity-60
         "
