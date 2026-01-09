@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabaseServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
+
+const genAI = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY!,
+});
 
 export async function POST(req: Request) {
   const supabase = createClient();
@@ -22,7 +27,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // ✅ Fetch credits
+  // 💳 Credits
   const { data: wallet } = await supabase
     .from("credits")
     .select("balance")
@@ -36,7 +41,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // ✅ Deduct credits (SERVER SIDE)
   await supabase
     .from("credits")
     .update({
@@ -44,13 +48,40 @@ export async function POST(req: Request) {
     })
     .eq("user_id", user.id);
 
-  // 🔥 Call AI service here
-  const images = [
-    "/placeholder-thumbnail.png",
-    "/placeholder-thumbnail.png",
-    "/placeholder-thumbnail.png",
-    "/placeholder-thumbnail.png",
-  ];
+  // 🎯 IMPORTANT: NO TEXT IN IMAGE
+  const finalPrompt = `
+Create a YouTube thumbnail background.
+Aspect ratio: 16:9
+Style: cinematic, high contrast, bold colors
 
-  return NextResponse.json({ images });
+Topic:
+${prompt}
+
+Rules:
+- NO text, NO letters
+- Leave empty space for text
+- Subject on left
+- Clean background
+`;
+
+  const model = genAI.getGenerativeModel({
+    model: "imagen-3.0-generate-001",
+  });
+
+  const result = await model.generateContent(finalPrompt);
+
+  const imagePart =
+    result.response.candidates?.[0]?.content?.parts?.[0];
+
+  if (!imagePart?.inlineData) {
+    return NextResponse.json(
+      { error: "Image generation failed" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    imageBase64: imagePart.inlineData.data,
+    mimeType: imagePart.inlineData.mimeType,
+  });
 }
