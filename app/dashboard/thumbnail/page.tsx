@@ -193,87 +193,64 @@ export default function ThumbnailPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0D0D0D] text-white px-6 py-10">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="p-6 bg-black min-h-screen text-white">
+      <h1 className="text-2xl font-bold mb-4">Thumbnail Generator</h1>
 
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-extrabold mb-2">
-            Thumbnail Generator
-          </h1>
-          <p className="text-gray-400">
-            Generate high-CTR YouTube thumbnails using AI
-          </p>
-        </div>
+      <textarea
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="AWS tutorial thumbnail"
+        className="w-full p-3 mb-4 bg-neutral-900 rounded"
+      />
 
-        {/* Prompt Box */}
-        <div className="bg-[#121212] border border-gray-800 rounded-xl p-6 space-y-4">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="YouTube thumbnail for AWS tutorial"
-            className="
-              w-full min-h-[140px]
-              bg-black text-white
-              border border-neutral-700
-              rounded p-4 resize-none
-            "
-          />
+      <button
+        onClick={generateThumbnail}
+        className="px-6 py-2 bg-red-600 rounded mb-4"
+      >
+        {loading ? "Generating..." : "Generate Background"}
+      </button>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={enhancePrompt}
-              disabled={enhancing}
-              className="
-                px-4 py-2
-                border border-neutral-600
-                bg-gray-800 hover:bg-gray-700
-                rounded font-semibold
-                disabled:opacity-60
-              "
-            >
-              {enhancing
-                ? "Enhancing..."
-                : "Enhance / Re-enhance Prompt ✨"}
-            </button>
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
+        <button onClick={addText} className="bg-gray-700 px-3 py-1 rounded">
+          Add Text
+        </button>
 
-            <button
-              onClick={generateThumbnail}
-              disabled={loading}
-              className="
-                ml-auto px-6 py-2
-                bg-blue-600 hover:bg-blue-700
-                rounded font-semibold
-                disabled:opacity-60
-              "
-            >
-              {loading ? "Generating..." : "Generate Thumbnail"}
-            </button>
-          </div>
+        <select
+          value={fontFamily}
+          onChange={(e) => setFontFamily(e.target.value)}
+          className="bg-gray-800 px-2 py-1 rounded"
+        >
+          {FONTS.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
 
-          {error && (
-            <p className="text-blue-500 text-sm">{error}</p>
-          )}
-        </div>
+        <button onClick={addRect} className="bg-gray-700 px-3 py-1 rounded">
+          Rectangle
+        </button>
 
-        {/* Thumbnail Result */}
-        {imageUrl && (
-          <div className="bg-[#121212] border border-gray-800 rounded-xl p-6 flex justify-center">
-            <img
-              src={imageUrl}
-              alt="Generated Thumbnail"
-              className="
-                w-full max-w-[720px]
-                aspect-video
-                object-cover
-                rounded-xl
-                border border-neutral-800
-                bg-black
-              "
-            />
-          </div>
-        )}
+        <button onClick={addCircle} className="bg-gray-700 px-3 py-1 rounded">
+          Circle
+        </button>
+
+        <button onClick={addTriangle} className="bg-gray-700 px-3 py-1 rounded">
+          Triangle
+        </button>
+
+        <label className="bg-gray-700 px-3 py-1 rounded cursor-pointer">
+          Upload Image
+          <input type="file" hidden onChange={uploadImage} />
+        </label>
+
+        <button onClick={deleteSelected} className="bg-red-700 px-3 py-1 rounded">
+          Delete
+        </button>
+
+        <button onClick={download} className="bg-green-600 px-3 py-1 rounded">
+          Download
+        </button>
       </div>
 
       <canvas ref={htmlCanvasRef} className="border border-gray-700 rounded" />
