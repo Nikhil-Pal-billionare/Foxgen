@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
-import { deductCredits } from "@/utils/deductCredits";
+import { deductCreditsServer } from "@/utils/deductCreditsServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 
 type Scene = {
@@ -12,6 +12,7 @@ export async function POST(req: Request) {
   const supabase = createClient();
 
   try {
+    /* ---------------- AUTH ---------------- */
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -23,6 +24,9 @@ export async function POST(req: Request) {
       );
     }
 
+    const userId = user.id;
+
+    /* ---------------- INPUT ---------------- */
     const { script, scenes, voiceoverUrl } = await req.json();
 
     if (!script || !Array.isArray(scenes)) {
@@ -32,20 +36,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const creditResult = await deductCredits({
-      userId: user.id,
+    /* ---------------- DEDUCT CREDITS ---------------- */
+    await deductCreditsServer({
+      userId,
       amount: CREDIT_COSTS.video_plan,
       reason: "video_generation",
-      meta: { scenes: scenes.length },
-    } as any);
+      meta: { sceneCount: scenes.length },
+    });
 
-    if (!creditResult.success) {
-      return NextResponse.json(
-        { error: "Insufficient credits" },
-        { status: 402 }
-      );
-    }
-
+    /* ---------------- BUILD TIMELINE ---------------- */
     const timeline = [];
 
     for (const scene of scenes as Scene[]) {
@@ -86,8 +85,27 @@ export async function POST(req: Request) {
         : null,
       status: "ready_for_render",
     });
-  } catch (err) {
-    console.error("VIDEO ERROR:", err);
+
+  } catch (err: any) {
+    console.error("🎬 VIDEO GENERATION ERROR:", err);
+
+    /* ---------------- OPTIONAL REFUND ---------------- */
+    try {
+      const {
+        data: { user },
+      } = await createClient().auth.getUser();
+
+      if (user) {
+        await deductCreditsServer({
+          userId: user.id,
+          amount: -CREDIT_COSTS.video_plan,
+          reason: "refund_video_failed",
+        });
+      }
+    } catch (refundErr) {
+      console.error("⚠️ Video refund failed:", refundErr);
+    }
+
     return NextResponse.json(
       { error: "Video generation failed" },
       { status: 500 }
