@@ -1,4 +1,5 @@
 type DeductCreditsArgs = {
+  userId?: string;
   amount: number;
   reason: string;
   meta?: Record<string, any>;
@@ -20,18 +21,24 @@ export async function deductCredits({
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      amount,
-      reason,
-      meta,
-    }),
+    body: JSON.stringify({ amount, reason, meta }),
   });
 
-  const data = await res.json();
+  // ✅ SAFELY HANDLE EMPTY RESPONSE
+  let data: any = {};
+  const text = await res.text();
 
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to deduct credits");
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("Invalid JSON from credit API");
+    }
   }
 
-  return data;
+  if (!res.ok) {
+    throw new Error(data?.error || "Failed to deduct credits");
+  }
+
+  return data || { success: true };
 }
