@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
+import { deductCreditsServer } from "@/utils/deductCreditsServer";
+import { CREDIT_COSTS } from "@/lib/creditCosts";
 import { GoogleGenAI } from "@google/genai";
 
-const BROLL_GENERATION_COST = 10;
-const TESTER_MODE = true; // 🔥 unlimited credits for testing
-
-/* ----------------------------------
-   GEMINI CLIENT (@google/genai)
------------------------------------ */
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
@@ -47,19 +43,13 @@ User request:
   });
 
   let text = response.text || "";
-
-  // ✅ Strip markdown code fences if Gemini adds them
-  text = text
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
+  text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
 
   try {
     const parsed = JSON.parse(text);
     if (!Array.isArray(parsed)) return [];
     return parsed.map(String);
-  } catch (err) {
-    console.error("Gemini JSON parse failed:", text);
+  } catch {
     return [];
   }
 }
@@ -68,23 +58,24 @@ User request:
    POST /api/broll/generate
 ----------------------------------- */
 export async function POST(req: Request) {
-  try {
-    const supabase = createClient();
+  const supabase = createClient();
 
-    /* ---------------------------
-       1. AUTH
-    ---------------------------- */
+  try {
+    /* ---------------- AUTH ---------------- */
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    /* ---------------------------
-       2. INPUT
-    ---------------------------- */
+    const userId: string = user.id;
+
+    /* ---------------- INPUT ---------------- */
     const { description } = await req.json();
 
     if (!description || description.trim().length < 3) {
@@ -94,61 +85,25 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ---------------------------
-       3. FETCH USER CREDITS (REAL TABLE)
-    ---------------------------- */
-    const { data: creditRow, error: creditError } = await supabase
-      .from("credits")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single();
+    /* ---------------- CREDIT COST ---------------- */
+    const cost = CREDIT_COSTS.BROLL_GENERATION_COST;
 
-    if (!creditRow || creditError) {
-      return NextResponse.json(
-        { error: "Credits row not found" },
-        { status: 400 }
-      );
-    }
+    /* ---------------- DEDUCT CREDITS ---------------- */
+    await deductCreditsServer({
+      userId,
+      amount: cost,
+      reason: "broll_generation",
+      meta: { description },
+    });
 
-    const currentCredits = creditRow.balance;
-
-    /* ---------------------------
-       4. CREDIT CHECK
-    ---------------------------- */
-    if (!TESTER_MODE && currentCredits < BROLL_GENERATION_COST) {
-      return NextResponse.json(
-        { error: "Insufficient credits" },
-        { status: 402 }
-      );
-    }
-
-    /* ---------------------------
-       5. DEDUCT CREDITS
-    ---------------------------- */
-    if (!TESTER_MODE) {
-      await supabase
-        .from("credits")
-        .update({
-          balance: currentCredits - BROLL_GENERATION_COST,
-        })
-        .eq("user_id", user.id);
-    }
-
-    /* ---------------------------
-       6. GEMINI → SCENES
-    ---------------------------- */
+    /* ---------------- GEMINI → SCENES ---------------- */
     const scenes = await generateScenesWithGemini(description);
 
     if (!scenes.length) {
-      return NextResponse.json(
-        { error: "Failed to generate scenes" },
-        { status: 500 }
-      );
+      throw new Error("Scene generation failed");
     }
 
-    /* ---------------------------
-       7. FETCH PEXELS VIDEOS
-    ---------------------------- */
+    /* ---------------- PEXELS FETCH ---------------- */
     const clips: any[] = [];
 
     for (const scene of scenes.slice(0, 4)) {
@@ -170,39 +125,49 @@ export async function POST(req: Request) {
     }
 
     if (!clips.length) {
-      return NextResponse.json(
-        { error: "No footage found" },
-        { status: 404 }
-      );
+      throw new Error("No footage found");
     }
 
-    /* ---------------------------
-       8. SAVE TO LATER FOOTAGES
-    ---------------------------- */
+    /* ---------------- SAVE RESULT ---------------- */
     await supabase.from("later_footages").insert({
-      user_id: user.id,
+      user_id: userId,
       title: description,
       clips,
-      source: TESTER_MODE
-        ? "pexels + gemini (tester)"
-        : "pexels + gemini",
+      source: "pexels + gemini",
     });
 
-    /* ---------------------------
-       9. RESPONSE
-    ---------------------------- */
+    /* ---------------- RESPONSE ---------------- */
     return NextResponse.json({
       success: true,
-      testerMode: TESTER_MODE,
-      creditsUsed: TESTER_MODE ? 0 : BROLL_GENERATION_COST,
-      creditsRemaining: currentCredits,
+      creditsUsed: cost,
       scenes,
       clips,
     });
-  } catch (err) {
-    console.error("BROLL GENERATE ERROR:", err);
+
+  } catch (err: any) {
+    console.error("🔥 BROLL GENERATION ERROR:", err);
+
+    /* ---------------- REFUND ON FAILURE ---------------- */
+    if (err?.message !== "Unauthorized") {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          await deductCreditsServer({
+            userId: user.id,
+            amount: -CREDIT_COSTS.BROLL_GENERATION_COST,
+            reason: "refund_broll_failed",
+          });
+        }
+      } catch (refundErr) {
+        console.error("⚠️ Refund failed:", refundErr);
+      }
+    }
+
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "B-roll generation failed" },
       { status: 500 }
     );
   }
