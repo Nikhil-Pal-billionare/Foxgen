@@ -30,7 +30,10 @@ export default function ScriptGeneratorPage() {
       return;
     }
 
-    setScript(data.finalScript);
+    // ✅ REGEX: Remove ** from script
+    const cleanedScript = data.finalScript.replace(/\*\*/g, "");
+
+    setScript(cleanedScript);
   }
 
   function goToVoiceover() {
