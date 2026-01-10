@@ -28,7 +28,7 @@ export default function RedeemCode() {
 
       <button
         onClick={apply}
-        className="px-6 py-2 bg-red-600 rounded-lg"
+        className="px-6 py-2 bg-blue-600 rounded-lg"
       >
         Apply
       </button>

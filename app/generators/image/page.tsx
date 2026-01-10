@@ -33,7 +33,7 @@ export default function ImageGeneratorPage() {
 
       <button
         onClick={generateImage}
-        className="px-6 py-3 bg-[#C1272D] rounded-lg hover:bg-[#A02025]"
+        className="px-6 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB]"
       >
         Generate
       </button>

@@ -1,7 +1,7 @@
 export default function FoxgenLogo({ size = 80 }) {
   return (
     <img
-      src="/demo/Foxgen-logo.png"
+      src="/demo/foxgen-logo.png"
       alt="Foxgen Logo"
       width={size}
       height={size}

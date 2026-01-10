@@ -52,7 +52,7 @@ export default function SignUpPage() {
           onChange={setPassword}
         />
 
-        <Button className="w-full bg-[#C1272D] hover:bg-[#a02025]" type="submit">
+        <Button className="w-full bg-[#3B82F6] hover:bg-[#2563EB]" type="submit">
           Create Account
         </Button>
 

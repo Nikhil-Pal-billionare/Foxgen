@@ -125,8 +125,8 @@ function ProductCard({
         transition-all duration-300 ease-out
         hover:scale-[1.04]
         hover:-translate-y-1
-        hover:border-red-500/40
-        hover:shadow-[0_0_30px_rgba(193,39,45,0.25)]
+        hover:border-blue-500/40
+        hover:shadow-[0_0_30px_rgba(59,130,246,0.25)]
       "
     >
       <div>
@@ -167,7 +167,7 @@ function ResolutionSelect({
         px-4 py-2
         text-sm
         focus:outline-none
-        focus:ring-2 focus:ring-red-500/40
+        focus:ring-2 focus:ring-blue-500/40
       "
     >
       <option value="480p">480p</option>
@@ -182,12 +182,12 @@ function GenerateButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="
         px-6 py-2
-        bg-red-600
+        bg-blue-600
         rounded-lg
         text-sm font-medium
 
         transition-all duration-200
-        hover:bg-red-500
+        hover:bg-blue-500
         hover:scale-105
         active:scale-95
       "

@@ -17,18 +17,18 @@ export const PRICING: Record<"INR" | "USD", RegionPricing> = {
     currency: "INR",
     symbol: "₹",
     plans: {
-      starter: { original: 1099, discounted: 668 },
-      pro: { original: 1999, discounted: 999 },
-      elite: { original: 3999, discounted: 2649 },
+      starter: { original: 1149, discounted: 999 },
+      pro: { original: 1999, discounted: 1699 },
+      elite: { original: 3999, discounted: 3499 },
     },
   },
   USD: {
     currency: "USD",
     symbol: "$",
     plans: {
-      starter: { original: 11, discounted: 6 },
-      pro: { original: 34, discounted: 29 },
-      elite: { original: 44, discounted: 39 },
+      starter: { original: 13, discounted:11 },
+      pro: { original: 23, discounted: 19 },
+      elite: { original: 45, discounted: 39 },
     },
   },
 };

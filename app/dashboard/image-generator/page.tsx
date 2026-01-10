@@ -126,7 +126,7 @@ export default function ImageGeneratorPage() {
               className="
                 px-4 py-2
                 border border-neutral-600
-                bg-red-600 hover:bg-red-700
+                bg-blue-600 hover:bg-blue-700
                 rounded font-semibold
                 disabled:opacity-60
               "
@@ -139,7 +139,7 @@ export default function ImageGeneratorPage() {
               disabled={loading}
               className="
                 ml-auto px-6 py-2
-                bg-red-600 hover:bg-red-700
+                bg-blue-600 hover:bg-blue-700
                 rounded font-semibold
                 disabled:opacity-60
               "
