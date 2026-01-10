@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+// ✅ Correct Import
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabaseServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+// ✅ Correct Initialization
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: Request) {
   const supabase = createClient();
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // 💳 Credits
+  // 💳 Credits Logic
   const { data: wallet } = await supabase
     .from("credits")
     .select("balance")
@@ -48,40 +48,40 @@ export async function POST(req: Request) {
     })
     .eq("user_id", user.id);
 
-  // 🎯 IMPORTANT: NO TEXT IN IMAGE
   const finalPrompt = `
 Create a YouTube thumbnail background.
 Aspect ratio: 16:9
 Style: cinematic, high contrast, bold colors
-
-Topic:
-${prompt}
-
-Rules:
-- NO text, NO letters
-- Leave empty space for text
-- Subject on left
-- Clean background
+Topic: ${prompt}
+Rules: NO text, NO letters, Leave empty space for text, Subject on left, Clean background
 `;
 
-  const model = genAI.getGenerativeModel({
-    model: "imagen-3.0-generate-001",
-  });
+  try {
+    // ✅ Model setup with Type Casting to avoid build errors
+    const model = (genAI as any).getGenerativeModel({
+      model: "imagen-3.0-generate-001",
+    });
 
-  const result = await model.generateContent(finalPrompt);
+    // Imagen 3 ke liye generateContent use hota hai
+    const result = await model.generateContent(finalPrompt);
+    const response = await result.response;
+    
+    // Imagen ka response structure check karein
+    const imagePart = response.candidates?.[0]?.content?.parts?.[0];
 
-  const imagePart =
-    result.response.candidates?.[0]?.content?.parts?.[0];
+    if (!imagePart?.inlineData) {
+      throw new Error("No image data received");
+    }
 
-  if (!imagePart?.inlineData) {
+    return NextResponse.json({
+      imageBase64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType,
+    });
+  } catch (error: any) {
+    console.error("Imagen Error:", error);
     return NextResponse.json(
-      { error: "Image generation failed" },
+      { error: "Generation failed: " + error.message },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({
-    imageBase64: imagePart.inlineData.data,
-    mimeType: imagePart.inlineData.mimeType,
-  });
 }
