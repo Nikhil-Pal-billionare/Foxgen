@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react"; // ✅ Added Suspense
 import { useRouter, useSearchParams } from "next/navigation";
 import FoxgenLogo from "@/components/branding/FoxgenLogo";
 
@@ -13,7 +13,8 @@ type Pricing = {
   >;
 };
 
-export default function PaymentPage() {
+// --- 1. Create a logic component ---
+function PaymentContent() {
   const router = useRouter();
   const params = useSearchParams();
   const planId = params.get("plan") as "starter" | "pro" | "elite";
@@ -33,7 +34,9 @@ export default function PaymentPage() {
     fetch("/api/pricing")
       .then((r) => r.json())
       .then((data) => {
-        const price = data.plans[planId].discounted;
+        // Fallback agar planId na mile
+        const selectedPlan = planId || "starter";
+        const price = data.plans[selectedPlan].discounted;
         setPricing(data);
         setBasePrice(price);
         setFinalPrice(price);
@@ -42,16 +45,8 @@ export default function PaymentPage() {
 
   function applyPromo() {
     if (!pricing) return;
-
     const code = promoCode.trim().toUpperCase();
-
-    if (code === "YDTA100") {
-      setAppliedPromo(code);
-      setFinalPrice(0);
-      setError("");
-      return;
-    }
-    if (code === "PRCH100A") {
+    if (code === "YDTA100" || code === "PRCH100A") {
       setAppliedPromo(code);
       setFinalPrice(0);
       setError("");
@@ -68,7 +63,6 @@ export default function PaymentPage() {
       setError("");
       return;
     }
-
     setAppliedPromo(null);
     setFinalPrice(basePrice);
     setError("Invalid promotion code");
@@ -76,7 +70,6 @@ export default function PaymentPage() {
 
   async function handlePayment() {
     if (!email) return setError("Email required");
-
     setLoading(true);
     setError("");
 
@@ -92,7 +85,6 @@ export default function PaymentPage() {
 
     const data = await res.json();
 
-    /* 🆓 FREE */
     if (data.free) {
       router.push("/dashboard");
       return;
@@ -125,7 +117,11 @@ export default function PaymentPage() {
     setLoading(false);
   }
 
-  if (!pricing) return null;
+  if (!pricing) return (
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-white">
+      Loading payment details...
+    </div>
+  );
 
   return (
     <main className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
@@ -137,7 +133,7 @@ export default function PaymentPage() {
 
         <div className="bg-[#1A1A1A] p-4 rounded text-center">
           <p className="text-sm text-gray-400">Selected Plan</p>
-          <p className="text-xl font-bold capitalize">{planId}</p>
+          <p className="text-xl font-bold capitalize">{planId || "Starter"}</p>
           <p className="text-2xl font-extrabold text-[#C1272D] mt-2">
             {pricing.symbol}
             {finalPrice}
@@ -151,7 +147,7 @@ export default function PaymentPage() {
             <input
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
-              className="flex-1 bg-black border border-gray-700 rounded px-3 py-2"
+              className="flex-1 bg-black border border-gray-700 rounded px-3 py-2 text-white"
             />
             <button
               onClick={applyPromo}
@@ -163,10 +159,7 @@ export default function PaymentPage() {
 
           {appliedPromo && (
             <p className="text-green-400 text-sm mt-1">
-              🎉 {appliedPromo === "YDTA100"
-                ? "100% discount applied"
-                : "Discount applied"},
-                {appliedPromo === "PRCH100A"
+              🎉 {(appliedPromo === "YDTA100" || appliedPromo === "PRCH100A")
                 ? "100% discount applied"
                 : "Discount applied"}
             </p>
@@ -177,7 +170,7 @@ export default function PaymentPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="w-full bg-black border border-gray-700 rounded px-3 py-2"
+          className="w-full bg-black border border-gray-700 rounded px-3 py-2 text-white"
         />
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -185,7 +178,7 @@ export default function PaymentPage() {
         <button
           onClick={handlePayment}
           disabled={loading}
-          className="w-full bg-red-600 py-3 rounded font-semibold"
+          className="w-full bg-red-600 py-3 rounded font-semibold transition-opacity disabled:opacity-50"
         >
           {loading ? "Processing..." : "Pay Now"}
         </button>
@@ -195,5 +188,18 @@ export default function PaymentPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+// --- 2. Main Export with Suspense ---
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-white">
+        Loading...
+      </div>
+    }>
+      <PaymentContent />
+    </Suspense>
   );
 }
