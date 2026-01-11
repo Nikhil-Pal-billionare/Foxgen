@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabaseServer";
 
 type Args = {
   userId: string;
-  amount: number;
+  amount: number; // +ve = deduct, -ve = refund
   reason: string;
   meta?: Record<string, any>;
 };
@@ -10,21 +10,41 @@ type Args = {
 export async function deductCreditsServer({
   userId,
   amount,
-  reason,
-  meta = {},
 }: Args) {
   const supabase = createClient();
 
-  const { error } = await supabase.rpc("deduct_credits", {
-    p_user_id: userId,
-    p_amount: amount,
-    p_reason: reason,
-    p_meta: meta,
-  });
+  /* ---------------- FETCH CURRENT BALANCE ---------------- */
+  const { data, error } = await supabase
+    .from("credits")
+    .select("balance")
+    .eq("user_id", userId)
+    .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error("Credits row not found");
   }
 
-  return { success: true };
+  const newBalance = data.balance - amount;
+
+  if (newBalance < 0) {
+    throw new Error("Insufficient credits");
+  }
+
+  /* ---------------- UPDATE BALANCE ---------------- */
+  const { error: updateError } = await supabase
+    .from("credits")
+    .update({
+      balance: newBalance,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    throw new Error("Failed to update credits");
+  }
+
+  return {
+    success: true,
+    balance: newBalance,
+  };
 }
