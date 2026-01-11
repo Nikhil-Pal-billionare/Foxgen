@@ -1,5 +1,6 @@
 import DashboardLayoutWrapper from "@/components/dashboard/DashboardLayoutWrapper";
 import { createClient } from "@/lib/supabaseServer";
+import { CreditsProvider } from "@/providers/CreditsProvider";
 
 export default async function DashboardLayout({
   children,
@@ -12,28 +13,23 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 🔍 DEBUG LOGS (TEMPORARY)
-  console.log("USER ID:", user?.id);
-
   let isInfluencer = false;
 
   if (user) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("influencers")
-      .select("id, status")
+      .select("status")
       .eq("id", user.id)
       .single();
 
-    console.log("INFLUENCER ROW:", data);
-    console.log("INFLUENCER ERROR:", error);
-
     isInfluencer = data?.status?.toLowerCase() === "approved";
-
   }
 
   return (
-    <DashboardLayoutWrapper isInfluencer={isInfluencer}>
-      {children}
-    </DashboardLayoutWrapper>
+    <CreditsProvider>
+      <DashboardLayoutWrapper isInfluencer={isInfluencer}>
+        {children}
+      </DashboardLayoutWrapper>
+    </CreditsProvider>
   );
 }

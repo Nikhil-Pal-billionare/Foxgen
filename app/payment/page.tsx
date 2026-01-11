@@ -61,7 +61,7 @@ export default function PaymentPage() {
       const discounted =
         pricing.currency === "INR"
           ? Math.max(basePrice - 100, 0)
-          : Math.max(basePrice - 5, 0);
+          : Math.max(basePrice - 2, 0);
 
       setAppliedPromo(code);
       setFinalPrice(discounted);

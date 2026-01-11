@@ -3,8 +3,7 @@
 import { useState } from "react";
 import React from "react";
 import Sidebar from "./Sidebar";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import FixedCreditChip from "./FixedCreditChip"; // ✅ ADD THIS
 
 export default function DashboardLayoutWrapper({
   children,
@@ -17,9 +16,8 @@ export default function DashboardLayoutWrapper({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#0D0D0D] text-white">
-      {/* Mobile Hamburger Trigger Removed - now in Sidebar */}
-
+    <div className="relative flex flex-col md:flex-row min-h-screen bg-[#0D0D0D] text-white">
+      
       {/* Sidebar */}
       <Sidebar
         isInfluencer={isInfluencer}
@@ -42,6 +40,9 @@ export default function DashboardLayoutWrapper({
           onClick={() => setIsMobileOpen(false)}
         />
       )}
+
+      {/* 🔥 GLOBAL REAL-TIME CREDIT CHIP (BOTTOM-LEFT) */}
+      <FixedCreditChip />
     </div>
   );
 }
