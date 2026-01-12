@@ -137,7 +137,7 @@ function PaymentContent() {
           <p className="text-2xl font-extrabold text-[#C1272D] mt-2">
             {pricing.symbol}
             {finalPrice}
-            <span className="text-sm text-gray-400"> /mo</span>
+            <span className="text-sm text-gray-400"> </span>
           </p>
         </div>
 
