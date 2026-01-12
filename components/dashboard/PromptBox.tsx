@@ -6,20 +6,20 @@ import { Loader2 } from "lucide-react";
 export default function PromptBox() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [image, setImage] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const imagesRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
 
-  async function generateImages() {
+  async function generateImage() {
     if (!prompt.trim()) {
-      setError("Please describe what you want to create");
+      setError("Please enter a prompt");
       return;
     }
 
     setLoading(true);
     setError("");
-    setImages([]); // 🚨 clear old images
+    setImage(null);
 
     try {
       const res = await fetch("/api/ai/image", {
@@ -35,27 +35,18 @@ export default function PromptBox() {
         throw new Error(data.error || "Image generation failed");
       }
 
-      /**
-       * BACKEND RETURNS:
-       * {
-       *   imageBase64: string,
-       *   mimeType: string
-       * }
-       */
-
       if (!data.imageBase64 || !data.mimeType) {
         throw new Error("Invalid image response");
       }
 
-      // ✅ Convert Base64 → Browser Image URL
+      // ✅ Base64 → browser image
       const imageUrl = `data:${data.mimeType};base64,${data.imageBase64}`;
+      setImage(imageUrl);
 
-      setImages([imageUrl]); // 👈 MUST be array
-
-      // 🔽 Auto-scroll to generated image
       setTimeout(() => {
-        imagesRef.current?.scrollIntoView({ behavior: "smooth" });
+        imageRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 150);
+
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Something went wrong");
@@ -65,116 +56,57 @@ export default function PromptBox() {
   }
 
   return (
-    <div className="space-y-10">
-      {/* =========================
-          PROMPT CARD
-      ========================= */}
-      <div
-        className={`
-          relative
-          transition-all duration-500
-          ${images.length ? "-translate-y-2" : ""}
-        `}
-      >
-        <div
+    <div className="space-y-8">
+      {/* PROMPT BOX */}
+      <div className="rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Describe what you want to create…"
           className="
-            rounded-3xl
-            bg-gradient-to-br from-white/10 to-white/5
-            backdrop-blur-xl
-            border border-white/15
-            shadow-[0_20px_60px_rgba(0,0,0,0.6)]
-            p-6
+            w-full h-36 resize-none bg-transparent
+            text-lg text-white placeholder:text-gray-400
+            outline-none
           "
-        >
-          {/* Textarea */}
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe what you want to create…"
+        />
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={generateImage}
+            disabled={loading}
             className="
-              w-full
-              h-36
-              resize-none
-              bg-transparent
-              text-lg
-              text-white
-              placeholder:text-gray-400
-              outline-none
-              leading-relaxed
+              px-8 py-3 rounded-2xl
+              font-medium text-black
+              bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400
+              disabled:opacity-50
+              flex items-center gap-2
             "
-          />
-
-          {/* Bottom bar */}
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-400">
-              Be descriptive for better results
-            </span>
-
-            <button
-              onClick={generateImages}
-              disabled={loading}
-              className="
-                px-8 py-3
-                rounded-2xl
-                font-medium
-                text-black
-                bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400
-                hover:opacity-90
-                transition
-                shadow-lg
-                disabled:opacity-50
-                flex items-center gap-2
-              "
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin w-5 h-5" />
-                  Generating...
-                </>
-              ) : (
-                "Generate"
-              )}
-            </button>
-          </div>
-
-          {error && (
-            <p className="mt-3 text-sm text-red-400">
-              {error}
-            </p>
-          )}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin w-5 h-5" />
+                Generating...
+              </>
+            ) : (
+              "Generate"
+            )}
+          </button>
         </div>
+
+        {error && <p className="mt-3 text-red-400">{error}</p>}
       </div>
 
-      {/* =========================
-          GENERATED IMAGE
-      ========================= */}
-      {images.length > 0 && (
+      {/* GENERATED IMAGE */}
+      {image && (
         <div
-          ref={imagesRef}
-          className="
-            grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6
-          "
+          ref={imageRef}
+          className="rounded-2xl overflow-hidden border border-white/10 shadow-lg"
         >
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="
-                rounded-xl
-                overflow-hidden
-                border border-white/10
-                shadow-lg
-                hover:scale-[1.03]
-                transition
-                bg-black/30
-              "
-            >
-              <img
-                src={img}
-                alt={`Generated image ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
+          <img
+            src={image}
+            alt="Generated image"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
     </div>
