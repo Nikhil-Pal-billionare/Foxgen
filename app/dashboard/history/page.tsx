@@ -7,19 +7,24 @@ import {
   Image as ImageIcon,
   Scissors,
   FileText,
+  CreditCard,
   ChevronDown,
 } from "lucide-react";
 
+/* =========================
+   TYPES
+========================= */
 type CreditLog = {
   id: string;
   amount: number;
   reason: string;
-  meta: any;
+  meta: Record<string, any> | null;
   created_at: string;
 };
 
-/* ---------------- ICON + LABEL MAP ---------------- */
-
+/* =========================
+   REASON → ICON + LABEL
+========================= */
 const REASON_META: Record<
   string,
   { label: string; icon: any }
@@ -44,8 +49,15 @@ const REASON_META: Record<
     label: "Script Generated",
     icon: FileText,
   },
+  plan_purchase: {
+    label: "Plan Purchased",
+    icon: CreditCard,
+  },
 };
 
+/* =========================
+   PAGE
+========================= */
 export default function HistoryPage() {
   const [logs, setLogs] = useState<CreditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,10 +72,14 @@ export default function HistoryPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">Credit History</h1>
+      <h1 className="text-2xl font-semibold">
+        Credit History
+      </h1>
 
       {loading && (
-        <p className="text-gray-400">Loading history...</p>
+        <p className="text-gray-400">
+          Loading history...
+        </p>
       )}
 
       {!loading && logs.length === 0 && (
@@ -74,13 +90,18 @@ export default function HistoryPage() {
 
       <div className="space-y-4">
         {logs.map((log) => {
-          const meta = REASON_META[log.reason] || {
-            label: log.reason.replace(/_/g, " "),
-            icon: FileText,
-          };
+          const metaConfig =
+            REASON_META[log.reason] || {
+              label: log.reason
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) =>
+                  l.toUpperCase()
+                ),
+              icon: FileText,
+            };
 
-          const Icon = meta.icon;
-          const isDebit = log.amount < 0;
+          const Icon = metaConfig.icon;
+          const isCredit = log.amount > 0;
 
           return (
             <div
@@ -103,7 +124,7 @@ export default function HistoryPage() {
 
                   <div>
                     <p className="font-medium">
-                      {meta.label}
+                      {metaConfig.label}
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(
@@ -113,20 +134,21 @@ export default function HistoryPage() {
                   </div>
                 </div>
 
+                {/* AMOUNT */}
                 <div
                   className={`text-lg font-semibold ${
-                    isDebit
-                      ? "text-red-400"
-                      : "text-green-400"
+                    isCredit
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
-                  {isDebit ? "+" : "-"}
+                  {isCredit ? "" : ""}
                   {Math.abs(log.amount)} credits
                 </div>
               </div>
 
               {/* DETAILS TOGGLE */}
-              {log.meta && (
+              {log.meta && Object.keys(log.meta).length > 0 && (
                 <button
                   onClick={() =>
                     setOpen(
@@ -147,9 +169,9 @@ export default function HistoryPage() {
                 </button>
               )}
 
-              {/* META */}
-              {open === log.id && (
-                <div className="mt-3 bg-black/40 rounded-lg p-3 text-xs text-gray-300">
+              {/* META DETAILS */}
+              {open === log.id && log.meta && (
+                <div className="mt-3 bg-black/40 rounded-lg p-3 text-xs text-gray-300 space-y-1">
                   {Object.entries(log.meta).map(
                     ([key, value]) => (
                       <div
@@ -159,7 +181,9 @@ export default function HistoryPage() {
                         <span className="text-gray-400">
                           {key}
                         </span>
-                        <span>{String(value)}</span>
+                        <span>
+                          {String(value)}
+                        </span>
                       </div>
                     )
                   )}
