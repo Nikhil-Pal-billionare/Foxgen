@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import FoxgenLogo from "@/components/branding/FoxgenLogo";
+import FoxgenLogo from "@/components/branding/FoxgenLogo"; // you can rename later
 import { createClient } from "@/lib/supabaseClient";
 
 export default function Home() {
@@ -20,11 +20,7 @@ export default function Home() {
   }, [supabase]);
 
   const handleStartCreating = () => {
-    if (isLoggedIn) {
-      router.push("/sign-in");
-    } else {
-      router.push("/sign-in");
-    }
+    router.push("/sign-in");
   };
 
   if (loading) return null;
@@ -39,13 +35,22 @@ export default function Home() {
           <FoxgenLogo size={140} />
         </div>
 
+        {/* Brand Name */}
+        <h2 className="text-sm uppercase tracking-widest text-gray-400">
+          Infinite Imagination
+        </h2>
+
+        {/* Main Slogan */}
         <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
-          Stop Creating Content Manually.<br />Let AI Do It for You.
+          Socho Kam. Banao Zyada. <br />
+          <span className="text-[#3B82F6]">Think Less. Create More.</span>
         </h1>
 
+        {/* Description */}
         <p className="text-gray-300 text-lg leading-relaxed max-w-2xl mx-auto">
-          Foxgen automates 100% of your content creation — from idea to image, video,
-          voice, and final output. Just enter an idea. Foxgen handles the rest.
+          Infinite Imagination automates your entire content creation process —
+          from idea to image, video, voice, and final output.
+          Just enter an idea. We handle the rest.
         </p>
 
         <button
@@ -55,30 +60,32 @@ export default function Home() {
         >
           Start Creating
         </button>
-    </section>
+      </section>
 
-    {/* Sample Images Section */ }
-    <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">AI Image Samples</h2>
+      {/* Sample Images Section */}
+      <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
+        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
+          AI Image Samples
+        </h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-        <img src="/demo/car.png" className="rounded-xl" alt="Sample 1" />
-        <img src="/demo/cat.png" className="rounded-xl" alt="Sample 2" />
-        <img src="/demo/dance.png" className="rounded-xl" alt="Sample 3" />
-        <img src="/demo/run.png" className="rounded-xl" alt="Sample 4" />
-        <img src="/demo/dog.png" className="rounded-xl" alt="Sample 5" />
-        <img src="/demo/man.png" className="rounded-xl" alt="Sample 6" />
-      </div>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          <img src="/demo/car.png" className="rounded-xl" alt="Sample 1" />
+          <img src="/demo/cat.png" className="rounded-xl" alt="Sample 2" />
+          <img src="/demo/dance.png" className="rounded-xl" alt="Sample 3" />
+          <img src="/demo/run.png" className="rounded-xl" alt="Sample 4" />
+          <img src="/demo/dog.png" className="rounded-xl" alt="Sample 5" />
+          <img src="/demo/man.png" className="rounded-xl" alt="Sample 6" />
+        </div>
 
-      <div className="text-center mt-8">
-        <button
-          onClick={handleStartCreating}
-          className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
-        >
-          Generate Your Own
-        </button>
-      </div>
-    </section>
-  </main>
+        <div className="text-center mt-8">
+          <button
+            onClick={handleStartCreating}
+            className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
+          >
+            Generate Your Own
+          </button>
+        </div>
+      </section>
+    </main>
   );
 }
