@@ -21,33 +21,34 @@ type Pricing = {
 
 const FEATURES = {
   free: [
-    "2 image generations",
-    "2 min video generation",
-    "1 script generation",
-    "1 voiceover (TTS)",
+    "50 free credits (one-time)",
+    "Try images, videos & voiceover",
+    "No credit card required",
+    "Basic AI access",
   ],
   starter: [
-    "Up to 80 image generation/mo",
-    "Up to 160 min video generation/mo",
-    "Up to 400 min TTS",
-    "Up to 400 min script generation",
-    "Up to 50 thumbnail generations",
+    "1600 credits ",
+    "Images, videos, voiceovers, scripts",
+    "AI Cut Editor & B-Roll access",
+    "Priority processing",
+    "Cancel anytime",
   ],
   pro: [
-    "Up to 160 image generation/mo",
-    "Up to 320 min video generation/mo",
-    "Up to 800 min TTS",
-    "Up to 800 min script generation",
-    "Up to 100 thumbnail generations",
+    "2800 credits ",
+    "Everything in Starter",
+    "Faster generation speed",
+    "Higher quality outputs",
+    "Advanced AI tools access",
   ],
   elite: [
-    "Up to 320 image generation/mo",
-    "Up to 640 min video generation/mo",
-    "Up to 1400 min TTS",
-    "Up to 1400 min script generation",
-    "Up to 200 thumbnail generations",
+    "5800 credits ",
+    "Everything in Pro",
+    "Maximum generation limits",
+    "Fastest processing speed",
+    "Premium AI features",
   ],
 };
+
 
 export default function PlansPage() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function PlansPage() {
         <PlanCard
           title="Free"
           priceLabel={`${symbol}0`}
-          period="/mo"
+          
           features={FEATURES.free}
           buttonLabel="Current Plan"
           onSelect={() => handleSelectPlan("free")}
@@ -116,7 +117,7 @@ export default function PlansPage() {
           title="Starter"
           original={`${symbol}${plans.starter.original}`}
           priceLabel={`${symbol}${plans.starter.discounted}`}
-          period="/mo"
+          
           features={FEATURES.starter}
           buttonLabel="Upgrade to Starter"
           onSelect={() => handleSelectPlan("starter")}
@@ -129,7 +130,7 @@ export default function PlansPage() {
           isPopular
           original={`${symbol}${plans.pro.original}`}
           priceLabel={`${symbol}${plans.pro.discounted}`}
-          period="/mo"
+          
           features={FEATURES.pro}
           buttonLabel="Upgrade to Pro"
           onSelect={() => handleSelectPlan("pro")}
@@ -141,7 +142,7 @@ export default function PlansPage() {
           title="Elite"
           original={`${symbol}${plans.elite.original}`}
           priceLabel={`${symbol}${plans.elite.discounted}`}
-          period="/mo"
+          
           features={FEATURES.elite}
           buttonLabel="Upgrade to Elite"
           onSelect={() => handleSelectPlan("elite")}
