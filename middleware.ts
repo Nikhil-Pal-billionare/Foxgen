@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
-      "media-src 'self' blob: https:", // 🔥 REQUIRED FOR AUDIO
+      "media-src 'self' blob: https:",
       "connect-src 'self' https:",
       "font-src 'self' https: data:",
       "frame-src 'self' https://api.razorpay.com",
@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
   );
 
   /* ===============================
-     ✅ SUPABASE AUTH
+     ✅ SUPABASE AUTH (EDGE SAFE)
      =============================== */
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,19 +39,33 @@ export async function middleware(req: NextRequest) {
     }
   );
 
+  // 🔑 Always use getUser (NOT getSession)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 🔐 Protect dashboard routes
-  if (!user && req.nextUrl.pathname.startsWith("/dashboard")) {
+  const pathname = req.nextUrl.pathname;
+
+  /* ===============================
+     🔐 ROUTE PROTECTION
+     =============================== */
+
+  // Protect dashboard
+  if (!user && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  // Protect admin (auth only, role check in layout)
+  if (!user && pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
   return res;
 }
 
+/* ===============================
+   ✅ MATCHER
+   =============================== */
 export const config = {
-  matcher: ["/dashboard((?!/_next).*)"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };
-
