@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 import textToSpeech from "@google-cloud/text-to-speech";
-
+import { ensureDailyFreeCredits } from "@/lib/freeCredits";
 const client = new textToSpeech.TextToSpeechClient();
 
 /* =========================
@@ -83,10 +83,13 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
+  // 🔥 ENSURE DAILY FREE CREDITS
+  await ensureDailyFreeCredits(user.id);
 
   /* =========================
      PARSE + VALIDATE INPUT

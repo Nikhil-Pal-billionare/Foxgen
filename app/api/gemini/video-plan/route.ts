@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { deductCreditsServer } from "@/utils/deductCreditsServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
+import {ensureDailyFreeCredits} from "@/lib/freeCredits";
 
 type Scene = {
   sceneText: string;
@@ -16,13 +17,13 @@ export async function POST(req: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
+    
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    // 🔥 ENSURE DAILY FREE CREDITS
+    await ensureDailyFreeCredits(user.id);
 
     const userId = user.id;
 

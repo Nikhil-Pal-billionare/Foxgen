@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabaseServer";
 import { deductCredits } from "@/utils/deductCredits";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 import { GoogleGenAI } from "@google/genai";
+import { ensureDailyFreeCredits } from "@/lib/freeCredits";
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -16,13 +17,13 @@ export async function POST(req: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
+    
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    // 🔥 ENSURE DAILY FREE CREDITS
+    await ensureDailyFreeCredits(user.id);
 
     /* ---------------- INPUT ---------------- */
     const { prompt, aspectRatio = "1:1", quality = "standard" } =
