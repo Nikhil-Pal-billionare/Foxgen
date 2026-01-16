@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabaseServer";
 
-const FREE_DAILY_CREDITS = 150;
+const FREE_DAILY_CREDITS = 50;
+const TRIAL_DAYS = 3;
 
 export async function ensureDailyFreeCredits(userId: string) {
   const supabase = createClient();
@@ -21,12 +22,12 @@ export async function ensureDailyFreeCredits(userId: string) {
   /* ---------------- GET CREDITS ROW ---------------- */
   const { data: credits } = await supabase
     .from("credits")
-    .select("balance, updated_at")
+    .select("balance, updated_at, created_at")
     .eq("user_id", userId)
     .single();
 
+  // 🆕 First-time free user → start trial
   if (!credits) {
-    // first-time user
     await supabase.from("credits").insert({
       user_id: userId,
       balance: FREE_DAILY_CREDITS,
@@ -34,15 +35,32 @@ export async function ensureDailyFreeCredits(userId: string) {
     return;
   }
 
-  /* ---------------- CHECK DATE ---------------- */
-  const lastUpdate = new Date(credits.updated_at).toDateString();
-  const today = new Date().toDateString();
+  /* ---------------- CHECK TRIAL DAYS ---------------- */
+  const trialStart = new Date(credits.created_at);
+  const today = new Date();
 
-  if (lastUpdate === today) {
-    return; // already set today
+  const diffDays = Math.floor(
+    (today.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // ❌ Trial expired (3 days over)
+  if (diffDays >= TRIAL_DAYS) {
+    await supabase.from("credits").update({
+      balance: 0,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+    return;
   }
 
-  /* ---------------- RESET FREE CREDITS ---------------- */
+  /* ---------------- DAILY RESET CHECK ---------------- */
+  const lastUpdate = new Date(credits.updated_at).toDateString();
+  const todayStr = today.toDateString();
+
+  if (lastUpdate === todayStr) {
+    return; // already reset today
+  }
+
+  /* ---------------- RESET DAILY FREE CREDITS ---------------- */
   await supabase.from("credits").update({
     balance: FREE_DAILY_CREDITS,
     updated_at: new Date().toISOString(),
