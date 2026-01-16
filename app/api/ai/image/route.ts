@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabaseServer";
 import { generateImage } from "@/lib/gemini";
 import { deductCredits } from "@/utils/deductCredits";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
+import { ensureDailyFreeCredits } from "@/lib/freeCredits";
+
+
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +15,13 @@ export async function POST(req: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
+    
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    // 🔥 ENSURE DAILY FREE CREDITS
+    await ensureDailyFreeCredits(user.id);
 
     const { prompt } = await req.json();
     if (!prompt) {

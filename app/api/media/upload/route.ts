@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
-
+import { ensureDailyFreeCredits } from "@/lib/freeCredits";
 export async function POST(req: Request) {
   const supabase = createClient();
   const formData = await req.formData();
@@ -13,10 +13,13 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
+  // 🔥 ENSURE DAILY FREE CREDITS
+  await ensureDailyFreeCredits(user.id);
 
   const filePath = `${user.id}/${Date.now()}-${file.name}`;
 

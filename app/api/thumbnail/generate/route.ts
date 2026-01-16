@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabaseServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
-
+import { ensureDailyFreeCredits } from "@/lib/freeCredits";
 // ✅ Correct Initialization
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -13,10 +13,13 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
+  // 🔥 ENSURE DAILY FREE CREDITS
+  await ensureDailyFreeCredits(user.id);
 
   const { prompt } = await req.json();
 
