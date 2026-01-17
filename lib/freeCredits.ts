@@ -6,36 +6,34 @@ const TRIAL_DAYS = 3;
 export async function ensureDailyFreeCredits(userId: string) {
   const supabase = createClient();
 
-  /* ---------------- CHECK PAID PLAN ---------------- */
+  /* ---------------- PAID PLAN CHECK ---------------- */
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("status")
+    .select("id")
     .eq("user_id", userId)
     .eq("status", "active")
     .maybeSingle();
 
-  // 🚫 Paid user → DO NOTHING
-  if (subscription) {
-    return;
-  }
+  if (subscription) return;
 
-  /* ---------------- GET CREDITS ROW ---------------- */
+  /* ---------------- FETCH CREDITS ---------------- */
   const { data: credits } = await supabase
     .from("credits")
-    .select("balance, updated_at, created_at")
+    .select("balance, created_at, last_free_reset")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
-  // 🆕 First-time free user → start trial
+  /* ---------------- FIRST TIME USER ---------------- */
   if (!credits) {
     await supabase.from("credits").insert({
       user_id: userId,
       balance: FREE_DAILY_CREDITS,
+      last_free_reset: new Date().toISOString(),
     });
     return;
   }
 
-  /* ---------------- CHECK TRIAL DAYS ---------------- */
+  /* ---------------- TRIAL CHECK ---------------- */
   const trialStart = new Date(credits.created_at);
   const today = new Date();
 
@@ -43,26 +41,25 @@ export async function ensureDailyFreeCredits(userId: string) {
     (today.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // ❌ Trial expired (3 days over)
   if (diffDays >= TRIAL_DAYS) {
-    await supabase.from("credits").update({
-      balance: 0,
-      updated_at: new Date().toISOString(),
-    }).eq("user_id", userId);
+    // ❌ No daily free credits after trial
     return;
   }
 
-  /* ---------------- DAILY RESET CHECK ---------------- */
-  const lastUpdate = new Date(credits.updated_at).toDateString();
+  /* ---------------- DAILY RESET ---------------- */
+  const lastReset = credits.last_free_reset
+    ? new Date(credits.last_free_reset).toDateString()
+    : null;
+
   const todayStr = today.toDateString();
 
-  if (lastUpdate === todayStr) {
-    return; // already reset today
-  }
+  if (lastReset === todayStr) return;
 
-  /* ---------------- RESET DAILY FREE CREDITS ---------------- */
-  await supabase.from("credits").update({
-    balance: FREE_DAILY_CREDITS,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", userId);
+  await supabase
+    .from("credits")
+    .update({
+      balance: FREE_DAILY_CREDITS,
+      last_free_reset: today.toISOString(),
+    })
+    .eq("user_id", userId);
 }
