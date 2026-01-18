@@ -18,6 +18,13 @@ export async function POST(req: Request) {
 
     const { amount, reason, meta } = await req.json();
 
+    if (!amount || amount <= 0) {
+      return NextResponse.json(
+        { success: false, error: "Invalid amount" },
+        { status: 400 }
+      );
+    }
+
     const { error } = await supabase.rpc("deduct_credits", {
       p_user_id: user.id,
       p_amount: amount,
@@ -32,12 +39,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ ALWAYS RETURN JSON
     return NextResponse.json({
       success: true,
       deducted: amount,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("CREDIT DEDUCT ERROR:", err);
     return NextResponse.json(
       { success: false, error: "Internal error" },

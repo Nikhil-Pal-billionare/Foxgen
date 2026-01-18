@@ -7,7 +7,6 @@ import {
   Package,
   Star,
   Wallet,
-  Scissors,
   Menu,
   X,
   Film,
@@ -153,11 +152,20 @@ export default function Sidebar({
 
           <SidebarItem
             icon={ImageIcon}
-            label="Images"
+            label="Image Generator"
             href="/dashboard/image-generator"
             onClick={onCloseMobile}
             isCollapsed={isCollapsed}
           />
+
+          <SidebarItem
+            icon={Star}
+            label="Show Your Talent"
+            href="/dashboard/show-your-talent"
+            onClick={onCloseMobile}
+            isCollapsed={isCollapsed}
+          />
+
 
           <SidebarItem
             icon={Video}
