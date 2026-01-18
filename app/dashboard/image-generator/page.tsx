@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { deductCredits } from "@/utils/deductCredits";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 
 export default function ImageGeneratorPage() {
+  const router = useRouter();
+
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
+  const [showTalentPrompt, setShowTalentPrompt] = useState(false);
+
   /* =========================
-     ENHANCE / RE-ENHANCE PROMPT
-     (OVERWRITE SAME TEXTAREA)
+     ENHANCE PROMPT
   ========================= */
   const enhancePrompt = async () => {
     if (!prompt.trim()) return;
@@ -28,7 +32,6 @@ export default function ImageGeneratorPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Prompt enhancement failed");
 
-      // 🔥 OVERWRITE SAME BOX
       setPrompt(data.enhancedPrompt);
     } catch (err: any) {
       alert(err.message || "Failed to enhance prompt");
@@ -45,16 +48,15 @@ export default function ImageGeneratorPage() {
 
     setLoading(true);
     setImageUrl(null);
+    setShowTalentPrompt(false);
 
     try {
-      // 1️⃣ Deduct credits
       await deductCredits({
         amount: CREDIT_COSTS.TEXT_TO_IMAGE,
         reason: "Text to Image generation",
         meta: { prompt },
       });
 
-      // 2️⃣ Call Image API
       const res = await fetch("/api/ai/image", {
         method: "POST",
         credentials: "include",
@@ -65,9 +67,6 @@ export default function ImageGeneratorPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Image generation failed");
 
-      // ===============================
-      // 🔥 Base64 → Image (Gemini-safe)
-      // ===============================
       let base64 = data.imageBase64 as string;
       const pad = base64.length % 4;
       if (pad !== 0) base64 += "=".repeat(4 - pad);
@@ -80,10 +79,12 @@ export default function ImageGeneratorPage() {
 
       const blob = new Blob([bytes], { type: data.mimeType });
       const reader = new FileReader();
-      reader.onloadend = () => setImageUrl(reader.result as string);
+      reader.onloadend = () => {
+        setImageUrl(reader.result as string);
+        setShowTalentPrompt(true); // 🔥 show message
+      };
       reader.readAsDataURL(blob);
     } catch (err: any) {
-      console.error(err);
       alert(err.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -118,31 +119,19 @@ export default function ImageGeneratorPage() {
             "
           />
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <button
               onClick={enhancePrompt}
               disabled={enhancing}
-              className="
-                px-4 py-2
-                border border-neutral-600
-                bg-blue-600 hover:bg-blue-700
-                rounded font-semibold
-                disabled:opacity-60
-              "
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-semibold"
             >
-              {enhancing ? "Enhancing..." : "Enhance / Re-enhance Prompt ✨"}
+              {enhancing ? "Enhancing..." : "Enhance Prompt ✨"}
             </button>
 
             <button
               onClick={generateImage}
               disabled={loading}
-              className="
-                ml-auto px-6 py-2
-                bg-blue-600 hover:bg-blue-700
-                rounded font-semibold
-                disabled:opacity-60
-              "
+              className="ml-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded font-semibold"
             >
               {loading ? "Generating..." : "Generate Image (20 credits)"}
             </button>
@@ -151,17 +140,39 @@ export default function ImageGeneratorPage() {
 
         {/* Image Result */}
         {imageUrl && (
-          <div className="bg-[#121212] border border-gray-800 rounded-xl p-6 flex justify-center">
+          <div className="bg-[#121212] border border-gray-800 rounded-xl p-6 space-y-4 text-center">
             <img
               src={imageUrl}
               alt="Generated"
-              className="
-                max-w-[512px]
-                rounded-xl
-                border border-neutral-800
-                bg-black
-              "
+              className="max-w-[512px] mx-auto rounded-xl border border-neutral-800"
             />
+
+            {showTalentPrompt && (
+              <div className="mt-4 space-y-3">
+                <p className="text-yellow-400 font-medium">
+                  Wish to upload this image for our Talent Show?
+                  <br />
+                  Please download it first.
+                </p>
+
+                <div className="flex justify-center gap-4">
+                  <a
+                    href={imageUrl}
+                    download="foxgen-image.png"
+                    className="px-4 py-2 bg-gray-700 rounded font-semibold"
+                  >
+                    Download Image
+                  </a>
+
+                  <button
+                    onClick={() => router.push("/dashboard/show-your-talent")}
+                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded font-semibold"
+                  >
+                    Yes, take me there →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
