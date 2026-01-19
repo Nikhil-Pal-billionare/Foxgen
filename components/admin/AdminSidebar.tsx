@@ -9,6 +9,7 @@ const links = [
   { name: "Usage", href: "/admin/usage" },
   { name: "Revenue", href: "/admin/revenue" },
   { name: "Referrals", href: "/admin/referrals" },
+  { name: "Submissions", href: "/admin/submissions" },
 ];
 
 export default function AdminSidebar() {
