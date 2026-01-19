@@ -1,11 +1,10 @@
 import { createClient } from "@/lib/supabaseServer";
-import Image from "next/image";
 import { revalidatePath } from "next/cache";
 
 export default async function AdminSubmissionsPage() {
   const supabase = createClient();
 
-  // 🔐 OPTIONAL: Ensure admin access
+  // 🔐 Ensure user logged in (admin check optional)
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -24,16 +23,30 @@ export default async function AdminSubmissionsPage() {
     return <div className="p-6 text-red-500">{error.message}</div>;
   }
 
+  // 🔐 Generate signed URLs for PRIVATE bucket
+  const submissionsWithUrls = await Promise.all(
+    submissions.map(async (item) => {
+      const { data } = await supabase.storage
+        .from("user-submissions")
+        .createSignedUrl(item.image_path, 60 * 60); // 1 hour
+
+      return {
+        ...item,
+        signedUrl: data?.signedUrl ?? null,
+      };
+    })
+  );
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">🎨 Talent Submissions</h1>
 
-      {submissions.length === 0 && (
+      {submissionsWithUrls.length === 0 && (
         <p className="text-gray-400">No submissions yet.</p>
       )}
 
       <div className="grid md:grid-cols-3 gap-6">
-        {submissions.map((item) => (
+        {submissionsWithUrls.map((item) => (
           <SubmissionCard key={item.id} item={item} />
         ))}
       </div>
@@ -45,17 +58,21 @@ export default async function AdminSubmissionsPage() {
    SUBMISSION CARD
 ========================= */
 function SubmissionCard({ item }: { item: any }) {
-  const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/user-submissions/${item.image_path}`;
-
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col gap-3">
-      <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-        <Image
-          src={imageUrl}
-          alt="User Submission"
-          fill
-          className="object-cover"
-        />
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-black/20">
+        {item.signedUrl ? (
+          <img
+            src={item.signedUrl}
+            alt="User Submission"
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-xs text-gray-400">
+            Image unavailable
+          </div>
+        )}
       </div>
 
       {item.caption && (
@@ -110,16 +127,9 @@ async function deleteSubmission(formData: FormData) {
   const id = formData.get("id") as string;
   const path = formData.get("path") as string;
 
-  // Delete file
-  await supabase.storage
-    .from("user-submissions")
-    .remove([path]);
+  await supabase.storage.from("user-submissions").remove([path]);
 
-  // Delete DB row
-  await supabase
-    .from("talent_submissions")
-    .delete()
-    .eq("id", id);
+  await supabase.from("talent_submissions").delete().eq("id", id);
 
   revalidatePath("/admin/submissions");
 }
