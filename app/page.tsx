@@ -62,6 +62,23 @@ export default function Home() {
           Start Creating
         </button>
       </section>
+
+      {/* Product Hunt Badge */}
+      <div className="flex justify-center">
+        <a
+          href="https://www.producthunt.com/products/foxgenai/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-foxgenai"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1149926&theme=light"
+            alt="FoxgenAI on Product Hunt"
+            width="250"
+            height="54"
+          />
+        </a>
+      </div>
+
       {/* Sample Images Section */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
@@ -77,29 +94,14 @@ export default function Home() {
           <img src="/demo/man.png" className="rounded-xl" alt="Man AI" />
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-8">
-  <button
-    onClick={handleStartCreating}
-    className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
-  >
-    Generate Your Own
-  </button>
-
-  {/* Product Hunt Badge */}
-  <a
-    href="https://www.producthunt.com/products/foxgenai/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-foxgenai"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    <img
-      src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1149926&theme=light"
-      alt="FoxgenAI on Product Hunt"
-      width="250"
-      height="54"
-    />
-  </a>
-</div>
-
+        <div className="text-center mt-8">
+          <button
+            onClick={handleStartCreating}
+            className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
+          >
+            Generate Your Own
+          </button>
+        </div>
       </section>
     </main>
   );
