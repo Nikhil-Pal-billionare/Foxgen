@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import FoxgenLogo from "@/components/branding/FoxgenLogo"; // you can rename later
+import FoxgenLogo from "@/components/branding/FoxgenLogo";
 import { createClient } from "@/lib/supabaseClient";
 
 export default function Home() {
@@ -20,7 +20,11 @@ export default function Home() {
   }, [supabase]);
 
   const handleStartCreating = () => {
-    router.push("/sign-in");
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/sign-in");
+    }
   };
 
   if (loading) return null;
@@ -35,18 +39,15 @@ export default function Home() {
           <FoxgenLogo size={140} />
         </div>
 
-        {/* Brand Name */}
         <h2 className="text-sm uppercase tracking-widest text-gray-400">
           Infinite Imagination
         </h2>
 
-        {/* Main Slogan */}
         <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
           Socho Kam. Banao Zyada. <br />
           <span className="text-[#3B82F6]">Think Less. Create More.</span>
         </h1>
 
-        {/* Description */}
         <p className="text-gray-300 text-lg leading-relaxed max-w-2xl mx-auto">
           Infinite Imagination automates your entire content creation process —
           from idea to image, video, voice, and final output.
@@ -61,7 +62,6 @@ export default function Home() {
           Start Creating
         </button>
       </section>
-
       {/* Sample Images Section */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
@@ -69,22 +69,37 @@ export default function Home() {
         </h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          <img src="/demo/car.png" className="rounded-xl" alt="Sample 1" />
-          <img src="/demo/cat.png" className="rounded-xl" alt="Sample 2" />
-          <img src="/demo/dance.png" className="rounded-xl" alt="Sample 3" />
-          <img src="/demo/run.png" className="rounded-xl" alt="Sample 4" />
-          <img src="/demo/dog.png" className="rounded-xl" alt="Sample 5" />
-          <img src="/demo/man.png" className="rounded-xl" alt="Sample 6" />
+          <img src="/demo/car.png" className="rounded-xl" alt="Car AI" />
+          <img src="/demo/cat.png" className="rounded-xl" alt="Cat AI" />
+          <img src="/demo/dance.png" className="rounded-xl" alt="Dance AI" />
+          <img src="/demo/run.png" className="rounded-xl" alt="Run AI" />
+          <img src="/demo/dog.png" className="rounded-xl" alt="Dog AI" />
+          <img src="/demo/man.png" className="rounded-xl" alt="Man AI" />
         </div>
 
-        <div className="text-center mt-8">
-          <button
-            onClick={handleStartCreating}
-            className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
-          >
-            Generate Your Own
-          </button>
-        </div>
+        <div className="mt-10 flex flex-col items-center gap-8">
+  <button
+    onClick={handleStartCreating}
+    className="px-6 md:px-8 py-3 bg-[#3B82F6] rounded-lg hover:bg-[#2563EB] text-lg font-medium"
+  >
+    Generate Your Own
+  </button>
+
+  {/* Product Hunt Badge */}
+  <a
+    href="https://www.producthunt.com/products/foxgenai/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-foxgenai"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <img
+      src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1149926&theme=light"
+      alt="FoxgenAI on Product Hunt"
+      width="250"
+      height="54"
+    />
+  </a>
+</div>
+
       </section>
     </main>
   );
