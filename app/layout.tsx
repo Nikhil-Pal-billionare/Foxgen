@@ -3,15 +3,20 @@ import { ReactNode } from "react";
 import Script from "next/script";
 
 export const metadata = {
-  title: "Foxgen AI",
-  description: "Create faster with Foxgen intelligence",
+  title: "FoxGen",
+  description: "AI Content Creation Platform",
+  icons: {
+    icon: "/demo/foxgen-logo.png",
+    apple: "/demo/foxgen-logo.png",
+  },
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
-}) {
+  children: React.ReactNode;
+})
+{
   return (
     <html lang="en">
       <head>
