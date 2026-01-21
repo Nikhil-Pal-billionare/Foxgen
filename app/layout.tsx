@@ -1,13 +1,17 @@
 import "./globals.css";
-import { ReactNode } from "react";
+import type { Metadata } from "next";
 import Script from "next/script";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "FoxGen",
   description: "AI Content Creation Platform",
   icons: {
-    icon: "/demo/foxgen-logo.png",
-    apple: "/demo/foxgen-logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -15,11 +19,10 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-})
-{
+}) {
   return (
     <html lang="en">
-      <head>
+      <body className="min-h-screen bg-[#0D0D0D] text-white">
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-FXHYGC4339"
@@ -35,9 +38,7 @@ export default function RootLayout({
             });
           `}
         </Script>
-      </head>
 
-      <body className="min-h-screen bg-[#0D0D0D] text-white">
         {children}
       </body>
     </html>
