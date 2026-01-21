@@ -3,16 +3,16 @@
 import { motion } from "framer-motion";
 
 const images = [
-  "/demo/car.png",
-  "/demo/cat.png",
-  "/demo/dance.png",
-  "/demo/dog.png",
-  "/demo/man.png",
-  "/demo/run.png",
-  "/demo/1.png",
-  "/demo/2.png",
-  "/demo/3.png",
-  "/demo/4.png",
+  "/demo/car.png?v=2",
+  "/demo/cat.png?v=2",
+  "/demo/dance.png?v=2",
+  "/demo/dog.png?v=2",
+  "/demo/man.png?v=2",
+  "/demo/run.png?v=2",
+  "/demo/1.png?v=2",
+  "/demo/2.png?v=2",
+  "/demo/3.png?v=2",
+  "/demo/4.png?v=2",
 ];
 
 export default function ImageGrid() {
