@@ -6,9 +6,13 @@ const images = [
   "/demo/car.png",
   "/demo/cat.png",
   "/demo/dance.png",
-  "/demo/run.png",
   "/demo/dog.png",
   "/demo/man.png",
+  "/demo/run.png",
+  "/demo/1.png",
+  "/demo/2.png",
+  "/demo/3.png",
+  "/demo/4.png",
 ];
 
 export default function ImageGrid() {
