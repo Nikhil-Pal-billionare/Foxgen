@@ -81,19 +81,22 @@ export default function Home() {
 
       {/* Sample Images Section */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
-        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
-          AI Image Samples
-        </h2>
+  <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
+    Discover AI
+  </h2>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          <img src="/demo/car.png" className="rounded-xl" alt="Car AI" />
-          <img src="/demo/cat.png" className="rounded-xl" alt="Cat AI" />
-          <img src="/demo/dance.png" className="rounded-xl" alt="Dance AI" />
-          <img src="/demo/run.png" className="rounded-xl" alt="Run AI" />
-          <img src="/demo/dog.png" className="rounded-xl" alt="Dog AI" />
-          <img src="/demo/man.png" className="rounded-xl" alt="Man AI" />
-        </div>
-
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+    <img src="/demo/car.png" className="rounded-xl" />
+    <img src="/demo/cat.png" className="rounded-xl" />
+    <img src="/demo/dance.png" className="rounded-xl" />
+    <img src="/demo/dog.png" className="rounded-xl" />
+    <img src="/demo/man.png" className="rounded-xl" />
+    <img src="/demo/run.png" className="rounded-xl" />
+    <img src="/demo/1.png" className="rounded-xl" />
+    <img src="/demo/2.png" className="rounded-xl" />
+    <img src="/demo/3.png" className="rounded-xl" />
+    <img src="/demo/4.png" className="rounded-xl" />
+  </div>
         <div className="text-center mt-8">
           <button
             onClick={handleStartCreating}
