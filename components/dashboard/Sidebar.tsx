@@ -174,15 +174,7 @@ export default function Sidebar({
             onClick={onCloseMobile}
             isCollapsed={isCollapsed}
           />
-
-          <SidebarItem
-            icon={CreditCard}
-            label="Credits"
-            href="/dashboard/credits"
-            onClick={onCloseMobile}
-            isCollapsed={isCollapsed}
-          />
-
+          
           <SidebarItem
             icon={Wallet}
             label="Plans"

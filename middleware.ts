@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
   );
 
   /* ===============================
-     ✅ SUPABASE AUTH (EDGE SAFE)
+     ✅ SUPABASE AUTH (OAUTH SAFE)
      =============================== */
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,25 +39,33 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // 🔑 Always use getUser (NOT getSession)
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const pathname = req.nextUrl.pathname;
 
   /* ===============================
-     🔐 ROUTE PROTECTION
+     ✅ ALLOW AUTH CALLBACKS
+     =============================== */
+  if (pathname.startsWith("/auth")) {
+    return res;
+  }
+
+  /* ===============================
+     🔐 PROTECTED ROUTES
      =============================== */
 
-  // Protect dashboard
-  if (!user && pathname.startsWith("/dashboard")) {
+  if (!session && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  // Protect admin (auth only, role check in layout)
-  if (!user && pathname.startsWith("/admin")) {
+  if (!session && pathname.startsWith("/admin")) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  if (session && (pathname === "/sign-in" || pathname === "/sign-up")) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return res;
@@ -67,5 +75,10 @@ export async function middleware(req: NextRequest) {
    ✅ MATCHER
    =============================== */
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/sign-in",
+    "/sign-up",
+  ],
 };
