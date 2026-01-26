@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Image as ImageIcon,
   Video,
-  CreditCard,
   History,
   Package,
   Star,
@@ -174,7 +173,7 @@ export default function Sidebar({
             onClick={onCloseMobile}
             isCollapsed={isCollapsed}
           />
-          
+
           <SidebarItem
             icon={Wallet}
             label="Plans"
