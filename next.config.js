@@ -24,7 +24,10 @@ const nextConfig = {
                 'self'
                 'unsafe-eval'
                 'unsafe-inline'
-                https://checkout.razorpay.com;
+                https://checkout.razorpay.com
+                https://www.googletagmanager.com
+                https://www.google-analytics.com
+                https://static.cloudflareinsights.com;
 
               style-src
                 'self'
@@ -49,7 +52,10 @@ const nextConfig = {
               connect-src
                 'self'
                 https:
-                wss:;
+                wss:
+                https://www.google-analytics.com
+                https://region1.google-analytics.com
+                https://static.cloudflareinsights.com;
 
               frame-src
                 'self'
