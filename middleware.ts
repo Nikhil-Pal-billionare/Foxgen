@@ -14,9 +14,9 @@ export async function middleware(req: NextRequest) {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' blob: https:",
-      "connect-src 'self' https:",
+      "img-src 'self' data: blob: https: https://static.aiquickdraw.com",
+      "media-src 'self' blob: https: https://static.aiquickdraw.com",
+      "connect-src 'self' https: https://api.kie.ai",
       "font-src 'self' https: data:",
       "frame-src 'self' https://api.razorpay.com",
     ].join("; ")

@@ -53,6 +53,9 @@ const nextConfig = {
                 'self'
                 https:
                 wss:
+                https://api.kie.ai
+                https://vusewiyltopamrfduifq.supabase.co
+                wss://vusewiyltopamrfduifq.supabase.co
                 https://www.google-analytics.com
                 https://region1.google-analytics.com
                 https://static.cloudflareinsights.com;
@@ -69,5 +72,4 @@ const nextConfig = {
     ];
   },
 };
-
 module.exports = nextConfig;

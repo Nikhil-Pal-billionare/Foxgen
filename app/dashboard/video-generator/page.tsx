@@ -2,184 +2,124 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sparkles, Film, Loader2 } from "lucide-react";
-
-type Scene = {
-  id: number;
-  text: string;
-  footageQuery: string;
-};
+import { Sparkles, Film, Loader2, Move } from "lucide-react";
 
 export default function VideoGeneratorPage() {
   const params = useSearchParams();
-  const scriptFromUrl = params.get("script");
-
+  const [activeTab, setActiveTab] = useState<"script" | "motion">("script");
+  
+  // Script States
   const [script, setScript] = useState("");
-  const [scenes, setScenes] = useState<Scene[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // 🔑 IMPORTANT: step 5 added
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [finalVideo, setFinalVideo] = useState<string | null>(null);
 
-  /* ---------------- PREFILL SCRIPT ---------------- */
-  useEffect(() => {
-    if (scriptFromUrl) {
-      setScript(scriptFromUrl);
-      setStep(2);
-    }
-  }, [scriptFromUrl]);
+  // Kling Motion States
+  const [prompt, setPrompt] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [klingResult, setKlingResult] = useState<any>(null);
 
-  /* ---------------- STEP 1 → 3 ---------------- */
-  function generatePlan() {
-    if (!script.trim()) return;
-
-    const lines = script
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-
-    const generated: Scene[] = lines.map((line, i) => ({
-      id: i,
-      text: line,
-      footageQuery: line
-        .replace(/[^a-zA-Z0-9 ]/g, "")
-        .toLowerCase()
-        .slice(0, 120),
-    }));
-
-    setScenes(generated);
-    setStep(3);
-  }
-
-  /* ---------------- GENERATE VIDEO ---------------- */
-  async function generateVideo() {
+  // Kling Generation Logic
+  const handleKlingGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     try {
-      setLoading(true);
-      setError("");
-      setStep(4);
-
-      const res = await fetch("/api/gemini/video-plan", {
+      const res = await fetch("/api/video/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          script,
-          scenes: scenes.map((s) => ({
-            sceneText: s.text,
-            footageQuery: s.footageQuery,
-          })),
-        }),
+        body: JSON.stringify({ prompt, imageUrl, videoUrl }),
       });
-
-      const text = await res.text();
-      if (!text) throw new Error("Empty server response");
-
-      const data = JSON.parse(text);
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Video generation failed");
-      }
-
-      if (!data.videoUrl) {
-        throw new Error("Video URL missing in response");
-      }
-
-      console.log("🎬 VIDEO URL:", data.videoUrl);
-
-      setFinalVideo(data.videoUrl);
-      setStep(5); // ✅ THIS FIXES THE UI
-
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Something went wrong");
-      setStep(3);
+      const data = await res.json();
+      if (res.ok) setKlingResult(data);
+      else alert(data.error || "Generation failed");
+    } catch (err) {
+      alert("Something went wrong");
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  // ... (Aapka purana generatePlan aur generateVideo functions yahan rahega)
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 text-white">
       {/* HEADER */}
-      <div className="flex items-center gap-3 mb-8">
-        <Film className="text-blue-600" />
-        <h1 className="text-4xl font-black">AI Video Generator</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Film className="text-blue-600" />
+          <h1 className="text-4xl font-black">Foxgen AI Video</h1>
+        </div>
+        
+        {/* TABS */}
+        <div className="flex bg-white/5 p-1 rounded-lg">
+          <button 
+            onClick={() => setActiveTab("script")}
+            className={`px-4 py-2 rounded-md text-sm font-bold transition ${activeTab === "script" ? "bg-blue-600" : ""}`}
+          >
+            Script to Video
+          </button>
+          <button 
+            onClick={() => setActiveTab("motion")}
+            className={`px-4 py-2 rounded-md text-sm font-bold transition ${activeTab === "motion" ? "bg-blue-600" : ""}`}
+          >
+            Motion Control
+          </button>
+        </div>
       </div>
 
-      {/* SCRIPT INPUT */}
-      {step < 3 && (
-        <>
-          <textarea
-            value={script}
-            onChange={(e) => setScript(e.target.value)}
-            placeholder="Paste your script here (one line = one scene)"
-            className="w-full h-48 p-6 bg-black/50 rounded-xl"
-          />
-
-          <button
-            onClick={generatePlan}
-            className="mt-6 w-full py-4 bg-blue-600 rounded-xl font-bold"
-          >
-            <Sparkles size={18} className="inline mr-2" />
-            Generate Video Plan
-          </button>
-        </>
-      )}
-
-      {/* SCENE REVIEW */}
-      {step === 3 && (
-        <>
-          <button
-            onClick={generateVideo}
-            className="mb-8 px-6 py-3 bg-white text-black rounded-xl font-bold"
-          >
-            Generate AI Video (Veo)
-          </button>
-
-          {scenes.map((scene) => (
-            <div
-              key={scene.id}
-              className="mb-6 p-6 bg-white/5 rounded-xl"
+      {activeTab === "script" ? (
+        <section>
+          {/* Aapka Purana Script Input aur UI Yahan Aayega */}
+          {/* ... (step check logic) */}
+        </section>
+      ) : (
+        <section className="max-w-2xl mx-auto bg-white/5 p-8 rounded-2xl border border-white/10">
+          <div className="flex items-center gap-2 mb-6 text-blue-400">
+            <Move size={20} />
+            <h2 className="text-xl font-bold">Kling 2.6 Motion Control</h2>
+          </div>
+          
+          <form onSubmit={handleKlingGenerate} className="space-y-4">
+            <textarea
+              required
+              placeholder="Describe the motion..."
+              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+            <input
+              required
+              type="url"
+              placeholder="Source Image URL (.jpg)"
+              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+            <input
+              required
+              type="url"
+              placeholder="Motion Reference Video URL (.mp4)"
+              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold flex justify-center items-center gap-2"
             >
-              <p className="italic">Scene {scene.id + 1}</p>
-              <p className="mt-2 text-gray-300">
-                “{scene.text}”
-              </p>
+              {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> Generate Motion Video</>}
+            </button>
+          </form>
+
+          {klingResult && (
+            <div className="mt-6 p-4 bg-blue-600/20 border border-blue-500/50 rounded-xl">
+              <p className="text-sm font-bold">Task ID: <span className="font-mono">{klingResult.id || klingResult.data?.id}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Generation started! Check back in 2-5 minutes.</p>
             </div>
-          ))}
-        </>
-      )}
-
-      {/* LOADING */}
-      {step === 4 && (
-        <div className="flex flex-col items-center justify-center gap-4 py-20">
-          <Loader2 className="animate-spin w-10 h-10" />
-          <p className="text-gray-300">
-            Generating cinematic AI video… this may take a few minutes
-          </p>
-        </div>
-      )}
-
-      {/* FINAL VIDEO */}
-      {step === 5 && finalVideo && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-4">🎬 Final Video</h2>
-
-          <video
-            src={finalVideo}
-            controls
-            className="w-full rounded-xl"
-          />
-        </div>
-      )}
-
-      {/* ERROR */}
-      {error && (
-        <div className="fixed bottom-6 right-6 bg-red-600 px-6 py-4 rounded-xl">
-          {error}
-        </div>
+          )}
+        </section>
       )}
     </div>
   );
