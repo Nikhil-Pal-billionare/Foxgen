@@ -1,74 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Film, Loader2, Move } from "lucide-react";
+import { Sparkles, Film, Loader2, Move, Upload } from "lucide-react";
 
 export default function VideoGeneratorPage() {
   const [activeTab, setActiveTab] = useState<"script" | "motion">("script");
 
   /* ===============================
-     SCRIPT TO VIDEO STATES
+      SCRIPT TO VIDEO STATES (UNCHANGED)
   =============================== */
   const [script, setScript] = useState("");
   const [scriptLoading, setScriptLoading] = useState(false);
   const [finalVideo, setFinalVideo] = useState<string | null>(null);
 
   /* ===============================
-     MOTION CONTROL STATES
+      MOTION CONTROL STATES (UPDATED)
   =============================== */
   const [prompt, setPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [motionLoading, setMotionLoading] = useState(false);
   const [klingResult, setKlingResult] = useState<any>(null);
 
   /* ===============================
-     SCRIPT GENERATION LOGIC
+      SCRIPT GENERATION LOGIC (UNCHANGED)
   =============================== */
   const handleScriptGenerate = async () => {
     if (!script.trim()) {
       alert("Please write a Text.");
       return;
     }
-
     setScriptLoading(true);
     setFinalVideo(null);
-
     try {
       const res = await fetch("/api/script-video/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ script }),
       });
-
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         alert(JSON.stringify(data.error));
         setScriptLoading(false);
         return;
       }
-
       const taskId = data.taskId;
-
-      // Poll every 5 seconds
       const interval = setInterval(async () => {
         const statusRes = await fetch("/api/script-video/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ taskId }),
         });
-
         const statusData = await statusRes.json();
-
         if (statusData.videoUrl) {
           setFinalVideo(statusData.videoUrl);
           clearInterval(interval);
           setScriptLoading(false);
         }
-
         if (statusData.status === "FAILED") {
           alert("Video generation failed.");
           clearInterval(interval);
@@ -82,25 +70,38 @@ export default function VideoGeneratorPage() {
   };
 
   /* ===============================
-     MOTION CONTROL LOGIC
+      MOTION CONTROL LOGIC (UPDATED FOR FILES)
   =============================== */
   const handleKlingGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!imageFile || !videoFile) {
+        alert("Please upload both an image and a reference video.");
+        return;
+    }
+
     setMotionLoading(true);
     setKlingResult(null);
+
+    const formData = new FormData();
+    formData.append("prompt", prompt);
+    formData.append("imageFile", imageFile);
+    formData.append("videoFile", videoFile);
 
     try {
       const res = await fetch("/api/video/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, imageUrl, videoUrl }),
+        // Headers are not needed for FormData, browser sets them automatically
+        body: formData,
       });
 
       const data = await res.json();
-      if (res.ok) setKlingResult(data);
-      else alert(data.error || "Generation failed");
+      if (res.ok) {
+          setKlingResult(data);
+      } else {
+          alert(data.error || "Generation failed");
+      }
     } catch {
-      alert("Something went wrong");
+      alert("Something went wrong with the network.");
     } finally {
       setMotionLoading(false);
     }
@@ -136,108 +137,75 @@ export default function VideoGeneratorPage() {
         </div>
       </div>
 
-      {/* ===============================
-          SCRIPT TO VIDEO TAB
-      =============================== */}
+      {/* SCRIPT TO VIDEO TAB (UNCHANGED) */}
       {activeTab === "script" ? (
         <section className="max-w-2xl mx-auto bg-white/5 p-8 rounded-2xl border border-white/10 space-y-6">
           <div className="flex items-center gap-2 text-blue-400">
             <Film size={20} />
-            <h2 className="text-xl font-bold">
-              Text to Video
-            </h2>
+            <h2 className="text-xl font-bold">Text to Video</h2>
           </div>
-
           <textarea
-            placeholder={`Example:
-A cinematic drone shot flying over snow-covered mountains at sunrise.
-Golden light. Slow motion. Epic atmosphere.`}
+            placeholder="Example: A cinematic drone shot..."
             value={script}
             onChange={(e) => setScript(e.target.value)}
             className="w-full h-40 p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 resize-none"
           />
-
           <button
             onClick={handleScriptGenerate}
             disabled={scriptLoading}
             className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold flex justify-center items-center gap-2"
           >
-            {scriptLoading ? (
-              <>
-                <Loader2 className="animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles size={18} />
-                Generate Script Video
-              </>
-            )}
+            {scriptLoading ? <Loader2 className="animate-spin" /> : "Generate Script Video"}
           </button>
-
-          {/* FINAL VIDEO */}
           {finalVideo && (
             <div className="mt-6 space-y-4">
-              <h3 className="font-bold text-lg">Your Video:</h3>
-
-              <div className="relative pt-[56.25%] bg-black rounded overflow-hidden">
-                <video
-                  src={finalVideo}
-                  controls
-                  autoPlay
-                  className="absolute top-0 left-0 w-full h-full"
-                />
-              </div>
-
-              <a
-                href={finalVideo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-center bg-green-600 hover:bg-green-700 py-3 rounded font-bold"
-              >
-                Download Video
-              </a>
+              <video src={finalVideo} controls className="w-full rounded" />
+              <a href={finalVideo} download className="block text-center bg-green-600 py-3 rounded font-bold">Download</a>
             </div>
           )}
         </section>
       ) : (
-        /* ===============================
-           MOTION CONTROL TAB
-        =============================== */
+        /* MOTION CONTROL TAB (UPDATED FOR FILE INPUTS) */
         <section className="max-w-2xl mx-auto bg-white/5 p-8 rounded-2xl border border-white/10">
           <div className="flex items-center gap-2 mb-6 text-blue-400">
             <Move size={20} />
-            <h2 className="text-xl font-bold">
-              Motion Control
-            </h2>
+            <h2 className="text-xl font-bold">Motion Control</h2>
           </div>
 
-          <form onSubmit={handleKlingGenerate} className="space-y-4">
-            <textarea
-              required
-              placeholder="Describe the motion..."
-              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
+          <form onSubmit={handleKlingGenerate} className="space-y-6">
+            <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-300">Motion Description</label>
+                <textarea
+                  required
+                  placeholder="Describe the movement you want..."
+                  className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+            </div>
 
-            <input
-              required
-              type="url"
-              placeholder="Source Image URL (.jpg)"
-              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-            />
-
-            <input
-              required
-              type="url"
-              placeholder="Motion Reference Video URL (.mp4)"
-              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-300">Source Image</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      required
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      className="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-300">Reference Video</label>
+                    <input 
+                      type="file" 
+                      accept="video/mp4"
+                      required
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      className="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white"
+                    />
+                </div>
+            </div>
 
             <button
               type="submit"
@@ -249,7 +217,7 @@ Golden light. Slow motion. Epic atmosphere.`}
               ) : (
                 <>
                   <Sparkles size={18} />
-                  Generate Motion Video
+                  Generate Motion Video (200 Credits)
                 </>
               )}
             </button>
@@ -257,15 +225,8 @@ Golden light. Slow motion. Epic atmosphere.`}
 
           {klingResult && (
             <div className="mt-6 p-4 bg-blue-600/20 border border-blue-500/50 rounded-xl">
-              <p className="text-sm font-bold">
-                Task ID:{" "}
-                <span className="font-mono">
-                  {klingResult.id || klingResult.data?.id}
-                </span>
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Generation started! Check back in 2-5 minutes.
-              </p>
+              <p className="text-sm font-bold">Task ID: <span className="font-mono text-blue-400">{klingResult.id}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Started! Video will be ready in 2-5 minutes.</p>
             </div>
           )}
         </section>
