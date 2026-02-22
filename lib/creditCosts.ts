@@ -1,7 +1,7 @@
 export const CREDIT_COSTS = {
   video_plan: 52,
   IMAGE_TO_VIDEO_480P: 52,
-  IMAGE_TO_VIDEO_720P: 115,
+  IMAGE_TO_VIDEO_720P: 200,
 
   AI_ADS_480P: 52,
   AI_ADS_720P: 115,
