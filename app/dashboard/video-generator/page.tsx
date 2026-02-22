@@ -122,7 +122,7 @@ export default function VideoGeneratorPage() {
             </section>
           </div>
 
-          <div className="lg:col-span-5">
+          <div className="sm:col-span-5">
             <div className="bg-[#121212] border border-white/5 rounded-2xl p-6 h-full flex flex-col items-center justify-center">
               {finalVideoUrl ? (
                 <video src={finalVideoUrl} controls className="rounded-xl w-full shadow-2xl" />
