@@ -217,7 +217,7 @@ export default function VideoGeneratorPage() {
               ) : (
                 <>
                   <Sparkles size={18} />
-                  Generate Motion Video (20 Credits)
+                  Generate Motion Video (200 Credits)
                 </>
               )}
             </button>
