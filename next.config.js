@@ -9,7 +9,11 @@ const nextConfig = {
       },
     ],
   },
-
+experimental: {
+    serverActions: {
+      bodySizeLimit: '100mb', // Limit ko 100MB kar diya
+    },
+  },
   async headers() {
     return [
       {
