@@ -8,7 +8,7 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 
 /* ---------------- INIT AI ---------------- */
 const ai = new GoogleGenAI({
@@ -31,8 +31,24 @@ export async function POST(req: Request) {
   let userId: string | null = null;
   let creditsDeducted = false;
   let jobId: string | null = null;
+  let errorMessage = "Video generation failed";
 
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "Server misconfiguration: GEMINI_API_KEY is missing" },
+        { status: 500 }
+      );
+    }
+
+    const ffmpegCheck = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
+    if (ffmpegCheck.status !== 0) {
+      return NextResponse.json(
+        { error: "Server dependency missing: ffmpeg is not installed" },
+        { status: 500 }
+      );
+    }
+
     /* ---------------- AUTH ---------------- */
     const {
       data: { user },
@@ -48,9 +64,12 @@ export async function POST(req: Request) {
     await ensureDailyFreeCredits(userId);
 
     /* ---------------- INPUT ---------------- */
-    const { script, scenes } = await req.json();
+    const { script, scenes: incomingScenes } = await req.json();
+    const scenes: Scene[] = Array.isArray(incomingScenes) && incomingScenes.length > 0
+      ? incomingScenes
+      : buildScenesFromScript(script);
 
-    if (!script || !Array.isArray(scenes) || scenes.length === 0) {
+    if (!script || scenes.length === 0) {
       return NextResponse.json(
         { error: "Invalid input" },
         { status: 400 }
@@ -122,11 +141,13 @@ Maintain continuity with previous scene.
 
       const generatedVideos = operation.response?.generatedVideos;
       if (!generatedVideos?.length) {
+        errorMessage = `Veo returned no videos for scene ${i + 1}`;
         throw new Error("Veo returned no videos");
       }
 
       const videoFile = generatedVideos[0]?.video;
       if (!videoFile) {
+        errorMessage = `Veo response missing downloadable file for scene ${i + 1}`;
         throw new Error("Missing video file");
       }
 
@@ -146,10 +167,16 @@ Maintain continuity with previous scene.
 
     fs.writeFileSync(listFile, timeline.join("\n"));
 
-    execSync(
-      `ffmpeg -y -f concat -safe 0 -i ${listFile} -c copy ${finalVideoPath}`,
-      { cwd: clipsDir }
+    const ffmpegRun = spawnSync(
+      "ffmpeg",
+      ["-y", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", finalVideoPath],
+      { cwd: clipsDir, stdio: "pipe" }
     );
+
+    if (ffmpegRun.status !== 0) {
+      errorMessage = "Failed to stitch clips with ffmpeg";
+      throw new Error(ffmpegRun.stderr.toString() || "ffmpeg failed");
+    }
 
     /* ---------------- UPLOAD (SERVICE ROLE) ---------------- */
     const videoBuffer = fs.readFileSync(finalVideoPath);
@@ -164,6 +191,7 @@ Maintain continuity with previous scene.
 
     if (uploadError) {
       console.error("❌ Supabase upload error:", uploadError);
+      errorMessage = uploadError.message || "Supabase upload failed";
       throw uploadError;
     }
 
@@ -178,7 +206,10 @@ Maintain continuity with previous scene.
       clipCount: scenes.length,
     });
 
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message) {
+      errorMessage = err.message;
+    }
     console.error("🎬 VIDEO GENERATION ERROR:", err);
 
     /* ---------------- SAFE REFUND ---------------- */
@@ -202,7 +233,7 @@ Maintain continuity with previous scene.
     }
 
     return NextResponse.json(
-      { error: "Video generation failed" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -218,4 +249,26 @@ function getMotion(index: number) {
     "Wide cinematic reveal shot",
   ];
   return motions[index % motions.length];
+}
+
+function buildScenesFromScript(script: string): Scene[] {
+  if (!script?.trim()) return [];
+
+  const chunks = script
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) =>
+      line
+        .split(/(?<=[.!?])\s+/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+    );
+
+  if (chunks.length === 0) return [];
+
+  return chunks.slice(0, 5).map((sceneText) => ({
+    sceneText,
+    footageQuery: sceneText,
+  }));
 }

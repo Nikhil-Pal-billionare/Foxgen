@@ -1,106 +1,179 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { randomUUID } from "crypto";
 import { ensureDailyFreeCredits } from "@/lib/freeCredits";
 import { deductCreditsServer } from "@/utils/deductCreditsServer";
 import { CREDIT_COSTS } from "@/lib/creditCosts";
 
-async function refundCredits(userId: string, amount: number) {
-  const supabase = createClient();
-  const { data: current } = await supabase.from("credits").select("balance").eq("user_id", userId).single();
-  if (current) {
-    await supabase.from("credits").update({ balance: current.balance + amount }).eq("user_id", userId);
-    await supabase.from("credit_logs").insert({
-      user_id: userId,
-      amount: amount,
-      reason: "refund_video_gen_failed"
-    });
-  }
-}
-
 export async function POST(req: Request) {
   const supabase = createClient();
   let userId: string | null = null;
-  const currentCost = CREDIT_COSTS.IMAGE_TO_VIDEO_720P; // Motion control cost
+
+  const currentCost = CREDIT_COSTS.IMAGE_TO_VIDEO_720P;
 
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!user || authError) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    userId = user.id;
+    console.log("========= MOTION GENERATE START =========");
 
+    /* ================= AUTH ================= */
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    console.log("Auth user:", user);
+    console.log("Auth error:", authError);
+
+    if (!user || authError) {
+      console.log("❌ Unauthorized request");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    userId = user.id;
+    console.log("User ID from auth:", userId);
+
+    /* ================= CREDIT CHECK DEBUG ================= */
+    const { data: creditRow, error: creditError } = await supabase
+      .from("credits")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    console.log("Credit row fetched:", creditRow);
+    console.log("Credit fetch error:", creditError);
+    console.log("Cost to deduct:", currentCost);
+
+    /* ================= ENSURE DAILY ================= */
     await ensureDailyFreeCredits(userId);
 
+    /* ================= FORM DATA ================= */
     const formData = await req.formData();
-    const prompt = formData.get("prompt") as string;
+
+    const prompt = String(formData.get("prompt") || "").trim();
     const imageFile = formData.get("imageFile") as File | null;
     const videoFile = formData.get("videoFile") as File | null;
 
-    /* ---------------- 1. DEDUCT CREDITS ---------------- */
-    try {
-      await deductCreditsServer({
-        userId: userId,
-        amount: currentCost,
-        reason: "video_generation_motion"
-      });
-    } catch (creditErr: any) {
-      return NextResponse.json({ error: creditErr.message || "Insufficient credits" }, { status: 402 });
+    console.log("Prompt:", prompt);
+    console.log("Image file exists:", !!imageFile);
+    console.log("Video file exists:", !!videoFile);
+
+    if (!prompt || !imageFile || !videoFile) {
+      console.log("❌ Missing input data");
+      return NextResponse.json(
+        { error: "Prompt, image and video required" },
+        { status: 400 }
+      );
     }
 
-    /* ---------------- 2. UPLOAD TO STORAGE ---------------- */
+    /* ================= DEDUCT CREDITS ================= */
+    try {
+      console.log("Calling deductCreditsServer...");
+
+      const deductResult = await deductCreditsServer({
+        userId,
+        amount: currentCost,
+        reason: "video_generation_motion",
+      });
+
+      console.log("Deduct success:", deductResult);
+
+    } catch (creditErr: any) {
+      console.log("❌ DEDUCT ERROR:", creditErr.message);
+      return NextResponse.json(
+        { error: creditErr.message },
+        { status: 402 }
+      );
+    }
+
+    /* ================= UPLOAD FILES ================= */
     const uploadToStorage = async (file: File) => {
-      const ext = file.name.split(".").pop() ?? "png";
+      const ext = file.name.split(".").pop() || "png";
       const fileName = `${randomUUID()}.${ext}`;
-      const filePath = `video-gen-assets/${fileName}`;
+      const filePath = `motion-inputs/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const { error } = await supabaseAdmin.storage
         .from("user-submissions")
-        .upload(filePath, file, { contentType: file.type });
+        .upload(filePath, buffer, {
+          contentType: file.type,
+        });
 
-      if (uploadError) throw uploadError;
+      if (error) {
+        console.log("❌ Upload error:", error);
+        throw error;
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data } = supabaseAdmin.storage
         .from("user-submissions")
         .getPublicUrl(filePath);
 
-      return publicUrl;
+      console.log("Uploaded file public URL:", data.publicUrl);
+
+      return data.publicUrl;
     };
 
-    let finalImageUrl = imageFile ? await uploadToStorage(imageFile) : "";
-    let finalVideoUrl = videoFile ? await uploadToStorage(videoFile) : "";
+    const imageUrl = await uploadToStorage(imageFile);
+    const referenceVideoUrl = await uploadToStorage(videoFile);
 
-    /* ---------------- 3. KIE API CALL ---------------- */
-    const input: any = {
-      prompt: prompt || "AI Video Generation",
-      character_orientation: "video",
-      mode: "1080p",
-      duration: "10",
-    };
-    if (finalImageUrl) input.input_urls = [finalImageUrl];
-    if (finalVideoUrl) input.video_urls = [finalVideoUrl];
-
-    const response = await fetch("https://api.kie.ai/api/v1/jobs/createTask", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.KIE_API_KEY?.trim()}`,
+    /* ================= CREATE KIE TASK ================= */
+    const payload = {
+      model: "kling-2.6/motion-control",
+      input: {
+        prompt,
+        input_urls: [imageUrl],
+        video_urls: [referenceVideoUrl],
+        character_orientation: "video",
+        mode: "1080p",
       },
-      body: JSON.stringify({ model: "kling-2.6/motion-control", input }),
-    });
+    };
+
+    console.log("Sending payload to KIE:", payload);
+
+    const response = await fetch(
+      "https://api.kie.ai/api/v1/jobs/createTask",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.KIE_API_KEY?.trim()}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await response.json();
 
+    console.log("KIE response:", data);
+
     if (!response.ok || data.code !== 200) {
-      if (userId) await refundCredits(userId, currentCost);
-      return NextResponse.json({ error: data.msg || "Kie API failed" }, { status: 400 });
+      console.log("❌ KIE task creation failed");
+      return NextResponse.json(
+        { error: data.msg || "KIE task failed" },
+        { status: 400 }
+      );
     }
 
-    // data.data mein taskId hota hai Kie.ai mein
-    const taskId = typeof data.data === 'object' ? data.data.taskId : data.data;
+    const taskId =
+      typeof data.data === "object"
+        ? data.data.taskId
+        : data.data;
 
-    return NextResponse.json({ id: taskId, status: "queued" });
+    console.log("Task ID:", taskId);
+
+    console.log("========= MOTION GENERATE SUCCESS =========");
+
+    return NextResponse.json({
+      id: taskId,
+      status: "queued",
+    });
 
   } catch (err: any) {
-    if (userId) await refundCredits(userId, currentCost);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.log("❌ FATAL ERROR:", err);
+    return NextResponse.json(
+      { error: err.message || "Motion generation failed" },
+      { status: 500 }
+    );
   }
 }

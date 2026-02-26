@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabaseServer";
 
 export type Args = {
   userId: string;
-  amount: number; // positive only
+  amount: number;
   reason?: string;
   meta?: Record<string, any>;
 };
@@ -29,19 +29,31 @@ export async function deductCreditsServer({
     throw new Error("Credits row not found");
   }
 
-  if (data.balance < amount) {
+  // 🔥 FIX: Convert to number explicitly
+  const balance = Number(data.balance);
+
+  if (isNaN(balance)) {
+    throw new Error("Invalid balance value");
+  }
+
+  if (balance < amount) {
     throw new Error("Insufficient credits");
   }
 
-  await supabase
+  const newBalance = balance - amount;
+
+  const { error: updateError } = await supabase
     .from("credits")
     .update({
-      balance: data.balance - amount,
+      balance: newBalance,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);
 
-  // Optional audit log
+  if (updateError) {
+    throw new Error("Failed to update credits");
+  }
+
   if (reason) {
     await supabase.from("credit_logs").insert({
       user_id: userId,
@@ -53,6 +65,6 @@ export async function deductCreditsServer({
 
   return {
     success: true,
-    balance: data.balance - amount,
+    balance: newBalance,
   };
 }
