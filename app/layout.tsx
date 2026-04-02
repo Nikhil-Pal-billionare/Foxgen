@@ -66,6 +66,12 @@ export default function RootLayout({
           `}
         </Script>
 
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3133856243662536"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
+
         {children}
       </body>
     </html>
