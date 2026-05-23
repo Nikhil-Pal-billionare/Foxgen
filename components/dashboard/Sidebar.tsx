@@ -9,8 +9,11 @@ import {
   Menu,
   X,
   Film,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 /* =========================
    TYPES
@@ -44,6 +47,15 @@ export default function Sidebar({
   onOpenMobile,
   onCloseMobile,
 }: SidebarProps) {
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    onCloseMobile(); // mobile me sidebar band karne ke liye
+  };
+
   return (
     <>
       {/* =========================
@@ -203,6 +215,39 @@ export default function Sidebar({
             </>
           )}
         </nav>
+        {/* =========================
+            LOGOUT BUTTON
+        ========================= */}
+        <div className="p-4 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="
+              group/item
+              flex items-center gap-3
+              px-4 py-2
+              rounded-lg
+              text-red-400
+              hover:bg-white/10
+              hover:text-red-300
+              transition
+              w-full
+            "
+          >
+            <LogOut size={18} className="shrink-0" />
+            <span
+              className={`
+                flex-1
+                whitespace-nowrap
+                transition-opacity
+                text-left
+                ${isCollapsed ? "md:opacity-0" : "opacity-100"}
+                md:group-hover:opacity-100
+              `}
+            >
+              Logout
+            </span>
+          </button>
+        </div>
       </aside>
     </>
   );
