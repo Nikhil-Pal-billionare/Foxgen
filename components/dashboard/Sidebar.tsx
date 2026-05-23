@@ -136,7 +136,7 @@ export default function Sidebar({
         {/* =========================
             NAV
         ========================= */}
-        <nav className="flex-1 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-4 space-y-1">
           <SidebarItem
             icon={LayoutDashboard}
             label="Dashboard"
