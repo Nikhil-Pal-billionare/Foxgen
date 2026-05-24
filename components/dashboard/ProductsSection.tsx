@@ -4,19 +4,19 @@ import { useRouter } from "next/navigation";
 
 const products = [
   {
-    title: "Script Generator",
+    title: "Generate Script",
     desc: "Generate creative AI scripts",
     cost: "Cost: 10",
     path: "/dashboard/script-generator",
   },
   {
-    title: "Voiceover Generator",
+    title: "Text to speech",
     desc: "Convert text into realistic voice",
     cost: "Cost: 16 / minute",
     path: "/dashboard/voiceover",
   },
   {
-    title: "Image Generator",
+    title: "Generate image from prompt",
     desc: "Create high-quality AI images",
     cost: "Cost: 20",
     path: "/dashboard/image-generator",
@@ -28,13 +28,13 @@ const products = [
     path: "/dashboard/image-to-video",
   },
   {
-    title: "Thumbnail Generator",
+    title: "Generate thumbnails",
     desc: "Generate YouTube thumbnails",
     cost: "Cost: 40",
     path: "/dashboard/thumbnail-generator",
   },
   {
-    title: "AI Ads Generator",
+    title: "Create AI Ads ",
     desc: "Generate AI-powered video ads",
     cost: "Cost: 52",
     path: "/dashboard/ads-generator",
@@ -46,7 +46,7 @@ export default function ProductsSection() {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-semibold">Our Products</h2>
+      <h2 className="text-2xl font-semibold">Create using AI</h2>
 
       <div className="grid md:grid-cols-2 gap-6">
         {products.map((p) => (
