@@ -33,10 +33,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#0D0D0D] text-white">
 
       {/* Hero Section */}
-      <section className="text-center py-12 md:py-24 px-6 space-y-8 max-w-4xl mx-auto">
+      <section className="text-center py-6 md:py-10 px-6 space-y-8 max-w-4xl mx-auto">
 
-        <div className="mb-4">
-          <FoxgenLogo size={140} />
+        <div className="flex items-center gap-3 mb-6">
+          <FoxgenLogo size={14} />
         </div>
 
         <h2 className="text-sm uppercase tracking-widest text-gray-400">
