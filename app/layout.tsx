@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "FoxGen",
-  description: "AI Content Creation Platform",
+  title: "Infimagen",
+  description: "Content creation platform optimized for content creators",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Foxgen AI",
+  name: "Infimagen AI",
   url: "https://foxgen.in",
   logo: "https://foxgen.in/demo/foxgen-logo.png",
   description: "AI Content Creation Platform",
